@@ -57,36 +57,32 @@ export const apiService = {
     return response.json();
   },
 
-  async getTransactionSummary(): Promise<TransactionSummary> {
+ async getTransactionSummary(excludeInternalTransfers: boolean = false): Promise<TransactionSummary> {
     try {
-      const response = await fetch(`${API_BASE}/api/Transaction/summary`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-      
-      return await handleResponse<TransactionSummary>(response);
-    } catch (error) {
-      console.error('Get summary error:', error);
-      throw new Error(`Failed to fetch summary: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  },
+      const params = new URLSearchParams();
+      if (excludeInternalTransfers) {
+        params.append('excludeInternalTransfers', 'true');
+      }
 
-  async uploadCSV(file: File): Promise<any> {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    try {
-      const response = await fetch(`${API_BASE}/api/Transaction/upload-csv`, {
-        method: 'POST',
-        body: formData,
-      });
+      const url = `${API_BASE}/api/Transaction/summary${params.toString() ? '?' + params.toString() : ''}`;
+      console.log('Fetching summary with URL:', url);
       
-      return await handleResponse<any>(response);
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Summary API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        throw new Error(`Failed to fetch summary: ${response.status} ${response.statusText}`);
+      }
+      
+      return response.json();
     } catch (error) {
-      console.error('Upload error:', error);
-      throw new Error(`Failed to upload CSV: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Error in getTransactionSummary:', error);
+      throw error;
     }
   },
 

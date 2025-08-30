@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
-import { Calendar, TrendingUp, PieChart as PieChartIcon, BarChart as BarChartIcon, Filter, X } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, ComposedChart, Area, AreaChart } from 'recharts';
+import { Calendar, TrendingUp, PieChart as PieChartIcon, BarChart as BarChartIcon, Filter, X, Wallet, TrendingDown, DollarSign, Target } from 'lucide-react';
 import { apiService } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Transaction, TransactionSummary, Category } from '@/types/transaction';
@@ -17,7 +17,9 @@ export default function FinancialCharts({ summary }: ChartsProps) {
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeChart, setActiveChart] = useState('monthly');
+  const [activeChart, setActiveChart] = useState('savings');
+  const [excludeInternalTransfers, setExcludeInternalTransfers] = useState(false);
+  const [summaryWithTransfers, setSummaryWithTransfers] = useState<TransactionSummary | null>(null);
   
   // Filter states
   const [dateFrom, setDateFrom] = useState('');
@@ -28,6 +30,21 @@ export default function FinancialCharts({ summary }: ChartsProps) {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (excludeInternalTransfers) {
+      fetchSummaryWithoutTransfers();
+    }
+  }, [excludeInternalTransfers]);
+
+  const fetchSummaryWithoutTransfers = async () => {
+    try {
+      const summaryData = await apiService.getTransactionSummary(true); // exclude internal transfers
+      setSummaryWithTransfers(summaryData);
+    } catch (error) {
+      console.error('Failed to fetch summary without transfers:', error);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -66,7 +83,28 @@ export default function FinancialCharts({ summary }: ChartsProps) {
     }
   };
 
-  // Filter transactions based on date and category filters
+  // Identify internal transfers client-side for filtering
+  const isInternalTransfer = (transaction: Transaction): boolean => {
+    const desc = transaction.description?.toLowerCase() || '';
+    const cat = transaction.category?.toLowerCase() || '';
+    
+    const internalPatterns = [
+      'transfer', 'tfr', 'internal', 'credit card payment', 'cc payment',
+      'loan payment', 'mortgage payment', 'between accounts', 'account transfer',
+      'online transfer', 'mobile transfer', 'wire transfer', 'deposit to',
+      'withdrawal from', 'move money', 'savings transfer'
+    ];
+    
+    const internalCategories = [
+      'transfers', 'internal transfer', 'loan payments', 
+      'credit card payments', 'account transfers'
+    ];
+    
+    return internalPatterns.some(pattern => desc.includes(pattern)) ||
+           internalCategories.some(pattern => cat.includes(pattern));
+  };
+
+  // Filter transactions based on date, category filters, and internal transfer toggle
   const getFilteredTransactions = () => {
     return allTransactions.filter(transaction => {
       // Date filter
@@ -81,38 +119,76 @@ export default function FinancialCharts({ summary }: ChartsProps) {
       const category = transaction.category || 'Uncategorized';
       if (excludedCategories.includes(category)) return false;
       
+      // Internal transfer filter
+      if (excludeInternalTransfers && isInternalTransfer(transaction)) return false;
+      
       return true;
     });
   };
 
-  // Process data for monthly spending chart
-  const getMonthlyData = () => {
+  // Process data for savings analysis chart
+  const getSavingsData = () => {
     const filteredTransactions = getFilteredTransactions();
-    const monthlyData = new Map<string, { month: string, credits: number, debits: number, net: number }>();
+    const monthlyData = new Map<string, { 
+      month: string, 
+      income: number, 
+      spending: number, 
+      savings: number, 
+      savingsRate: number,
+      internalTransfers: number
+    }>();
     
-    filteredTransactions.forEach(transaction => {
+    // Also track internal transfers separately
+    allTransactions.forEach(transaction => {
       const date = new Date(transaction.date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const monthLabel = date.toLocaleDateString('en-GB', { year: 'numeric', month: 'short' });
       
       if (!monthlyData.has(monthKey)) {
-        monthlyData.set(monthKey, { month: monthLabel, credits: 0, debits: 0, net: 0 });
+        monthlyData.set(monthKey, { 
+          month: monthLabel, 
+          income: 0, 
+          spending: 0, 
+          savings: 0, 
+          savingsRate: 0,
+          internalTransfers: 0
+        });
       }
       
       const data = monthlyData.get(monthKey)!;
-      if (transaction.credit > 0) {
-        data.credits += transaction.credit;
+      const isInternal = isInternalTransfer(transaction);
+      
+      if (isInternal) {
+        data.internalTransfers += Math.abs(transaction.credit);
       } else {
-        data.debits += Math.abs(transaction.credit);
+        // Only count non-internal transfers for actual income/spending
+        if (transaction.credit > 0) {
+          data.income += transaction.credit;
+        } else {
+          data.spending += Math.abs(transaction.credit);
+        }
       }
-      data.net = data.credits - data.debits;
+    });
+
+    // Calculate savings and rates
+    monthlyData.forEach((data) => {
+      data.savings = data.income - data.spending;
+      data.savingsRate = data.income > 0 ? (data.savings / data.income) * 100 : 0;
     });
 
     return Array.from(monthlyData.values())
       .sort((a, b) => a.month.localeCompare(b.month));
   };
 
-  // Process data for category spending
+  const handleCategoryToggle = (categoryName: string) => {
+    setExcludedCategories(prev => 
+      prev.includes(categoryName)
+        ? prev.filter(c => c !== categoryName)
+        : [...prev, categoryName]
+    );
+  };
+
+
   const getCategoryData = () => {
     const filteredTransactions = getFilteredTransactions();
     const categoryData = new Map<string, number>();
@@ -130,28 +206,9 @@ export default function FinancialCharts({ summary }: ChartsProps) {
       .slice(0, 8); // Top 8 categories
   };
 
-  // Process data for daily balance trend
-  const getBalanceTrendData = () => {
-    const filteredTransactions = getFilteredTransactions()
-      .slice(-60) // Last 60 transactions for better trend visibility
-      .map(transaction => ({
-        date: new Date(transaction.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-        balance: transaction.balance
-      }));
-    
-    return filteredTransactions;
-  };
-
-  const handleCategoryToggle = (categoryName: string) => {
-    setExcludedCategories(prev => 
-      prev.includes(categoryName)
-        ? prev.filter(c => c !== categoryName)
-        : [...prev, categoryName]
-    );
-  };
-
   const clearFilters = () => {
     setExcludedCategories([]);
+    setExcludeInternalTransfers(false);
     // Reset dates to default range
     if (allTransactions.length > 0) {
       const latestDate = new Date(Math.max(...allTransactions.map(t => new Date(t.date).getTime())));
@@ -166,10 +223,14 @@ export default function FinancialCharts({ summary }: ChartsProps) {
   // Colors for charts
   const colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#6366F1', '#14B8A6'];
 
-  const monthlyData = getMonthlyData();
-  const categoryData = getCategoryData();
-  const balanceData = getBalanceTrendData();
+  const savingsData = getSavingsData();
   const filteredTransactions = getFilteredTransactions();
+  const categoryData = getCategoryData();
+  // Calculate current period savings metrics
+  const currentPeriodIncome = filteredTransactions.filter(t => t.credit > 0).reduce((sum, t) => sum + t.credit, 0);
+  const currentPeriodSpending = filteredTransactions.filter(t => t.credit < 0).reduce((sum, t) => sum + Math.abs(t.credit), 0);
+  const currentPeriodSavings = currentPeriodIncome - currentPeriodSpending;
+  const currentSavingsRate = currentPeriodIncome > 0 ? (currentPeriodSavings / currentPeriodIncome) * 100 : 0;
 
   if (loading) {
     return (
@@ -189,15 +250,15 @@ export default function FinancialCharts({ summary }: ChartsProps) {
         <div className="flex justify-between items-center mb-4">
           <div className="flex space-x-4 overflow-x-auto">
             <button
-              onClick={() => setActiveChart('monthly')}
+              onClick={() => setActiveChart('savings')}
               className={`flex items-center px-4 py-2 rounded-md whitespace-nowrap ${
-                activeChart === 'monthly'
-                  ? 'bg-blue-600 text-white'
+                activeChart === 'savings'
+                  ? 'bg-green-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              <BarChartIcon className="h-4 w-4 mr-2" />
-              Monthly Trends
+              <Target className="h-4 w-4 mr-2" />
+              Savings Analysis
             </button>
             
             <button
@@ -213,15 +274,15 @@ export default function FinancialCharts({ summary }: ChartsProps) {
             </button>
             
             <button
-              onClick={() => setActiveChart('balance')}
+              onClick={() => setActiveChart('monthly')}
               className={`flex items-center px-4 py-2 rounded-md whitespace-nowrap ${
-                activeChart === 'balance'
+                activeChart === 'monthly'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Balance Trend
+              <BarChartIcon className="h-4 w-4 mr-2" />
+              Monthly Trends
             </button>
           </div>
 
@@ -235,9 +296,9 @@ export default function FinancialCharts({ summary }: ChartsProps) {
           >
             <Filter className="h-4 w-4 mr-2" />
             Filters
-            {(excludedCategories.length > 0 || dateFrom || dateTo) && (
+            {(excludedCategories.length > 0 || dateFrom || dateTo || excludeInternalTransfers) && (
               <span className="ml-1 text-xs bg-red-500 text-white rounded-full px-1">
-                {excludedCategories.length + (dateFrom ? 1 : 0) + (dateTo ? 1 : 0)}
+                {excludedCategories.length + (dateFrom ? 1 : 0) + (dateTo ? 1 : 0) + (excludeInternalTransfers ? 1 : 0)}
               </span>
             )}
           </button>
@@ -246,6 +307,24 @@ export default function FinancialCharts({ summary }: ChartsProps) {
         {/* Filters Panel */}
         {showFilters && (
           <div className="border-t pt-4 space-y-4">
+            {/* Internal Transfers Toggle */}
+            <div>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={excludeInternalTransfers}
+                  onChange={(e) => setExcludeInternalTransfers(e.target.checked)}
+                  className="mr-2"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Exclude Internal Transfers (Shows actual spending/income only)
+                </span>
+              </label>
+              <p className="text-xs text-gray-500 mt-1">
+                Filters out transfers between your accounts, credit card payments, loan payments, etc.
+              </p>
+            </div>
+
             {/* Date Range Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
@@ -257,6 +336,7 @@ export default function FinancialCharts({ summary }: ChartsProps) {
                   }
                   dateFormat="dd/MM/yyyy"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  placeholderText="From date"
                 />
 
                 <DatePicker
@@ -266,6 +346,7 @@ export default function FinancialCharts({ summary }: ChartsProps) {
                   }
                   dateFormat="dd/MM/yyyy"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  placeholderText="To date"
                 />
               </div>
             </div>
@@ -308,31 +389,46 @@ export default function FinancialCharts({ summary }: ChartsProps) {
               </button>
               <div className="text-sm text-gray-500">
                 Showing {filteredTransactions.length} of {allTransactions.length} transactions
+                {excludeInternalTransfers && (
+                  <span className="text-green-600 font-medium"> (transfers excluded)</span>
+                )}
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Charts */}
-      {activeChart === 'monthly' && (
+      {/* Savings Analysis Chart */}
+      {activeChart === 'savings' && (
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <BarChartIcon className="h-5 w-5 mr-2 text-blue-600" />
-            Monthly Income vs Expenses
+            <Target className="h-5 w-5 mr-2 text-green-600" />
+            Savings Rate Analysis
+            {excludeInternalTransfers && (
+              <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                Transfers Excluded
+              </span>
+            )}
           </h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyData}>
+              <ComposedChart data={savingsData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
-                <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(value: number) => [formatCurrency(value), '']} />
+                <YAxis yAxisId="amount" orientation="left" tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                <YAxis yAxisId="rate" orientation="right" tickFormatter={(value) => `${value.toFixed(0)}%`} />
+                <Tooltip 
+                  formatter={(value: number, name: string) => {
+                    if (name === 'Savings Rate') return [`${value.toFixed(1)}%`, name];
+                    return [formatCurrency(value), name];
+                  }} 
+                />
                 <Legend />
-                <Bar dataKey="credits" fill="#10B981" name="Income" />
-                <Bar dataKey="debits" fill="#EF4444" name="Expenses" />
-                <Bar dataKey="net" fill="#3B82F6" name="Net" />
-              </BarChart>
+                <Bar yAxisId="amount" dataKey="income" fill="#10B981" name="Income" />
+                <Bar yAxisId="amount" dataKey="spending" fill="#EF4444" name="Spending" />
+                <Bar yAxisId="amount" dataKey="savings" fill="#3B82F6" name="Net Savings" />
+                <Line yAxisId="rate" type="monotone" dataKey="savingsRate" stroke="#F59E0B" strokeWidth={3} name="Savings Rate" />
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -368,44 +464,46 @@ export default function FinancialCharts({ summary }: ChartsProps) {
         </div>
       )}
 
-      {activeChart === 'balance' && (
+      {/* Monthly Trends (existing chart) */}
+      {activeChart === 'monthly' && (
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <TrendingUp className="h-5 w-5 mr-2 text-blue-600" />
-            Account Balance Trend
+            <BarChartIcon className="h-5 w-5 mr-2 text-blue-600" />
+            Monthly Trends
+            {excludeInternalTransfers && (
+              <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                Transfers Excluded
+              </span>
+            )}
           </h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={balanceData}>
+              <BarChart data={savingsData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
+                <XAxis dataKey="month" />
                 <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(value: number) => [formatCurrency(value), 'Balance']} />
-                <Line 
-                  type="monotone" 
-                  dataKey="balance" 
-                  stroke="#3B82F6" 
-                  strokeWidth={2}
-                  dot={{ fill: '#3B82F6' }}
-                />
-              </LineChart>
+                <Tooltip formatter={(value: number) => [formatCurrency(value), '']} />
+                <Legend />
+                <Bar dataKey="income" fill="#10B981" name="Income" />
+                <Bar dataKey="spending" fill="#EF4444" name="Spending" />
+                <Bar dataKey="savings" fill="#3B82F6" name="Net Savings" />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
       )}
 
-      {/* Summary Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Enhanced Summary Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
-            <Calendar className="h-8 w-8 text-blue-600" />
+            <DollarSign className="h-8 w-8 text-green-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Filtered Period</p>
+              <p className="text-sm font-medium text-gray-500">
+                {excludeInternalTransfers ? 'Actual Income' : 'Total Income'}
+              </p>
               <p className="text-lg font-semibold text-gray-900">
-                {dateFrom && dateTo 
-                  ? `${new Date(dateFrom).toLocaleDateString('en-GB')} - ${new Date(dateTo).toLocaleDateString('en-GB')}` 
-                  : 'All Time'
-                }
+                {formatCurrency(currentPeriodIncome)}
               </p>
             </div>
           </div>
@@ -413,11 +511,13 @@ export default function FinancialCharts({ summary }: ChartsProps) {
         
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
-            <TrendingUp className="h-8 w-8 text-green-600" />
+            <TrendingDown className="h-8 w-8 text-red-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Filtered Total</p>
+              <p className="text-sm font-medium text-gray-500">
+                {excludeInternalTransfers ? 'Actual Spending' : 'Total Spending'}
+              </p>
               <p className="text-lg font-semibold text-gray-900">
-                {formatCurrency(filteredTransactions.reduce((sum, t) => sum + (t.credit > 0 ? t.credit : 0), 0))}
+                {formatCurrency(currentPeriodSpending)}
               </p>
             </div>
           </div>
@@ -425,16 +525,63 @@ export default function FinancialCharts({ summary }: ChartsProps) {
         
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
-            <PieChartIcon className="h-8 w-8 text-purple-600" />
+            <Wallet className="h-8 w-8 text-blue-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Active Categories</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {categories.length - excludedCategories.length} of {categories.length}
+              <p className="text-sm font-medium text-gray-500">Net Savings</p>
+              <p className={`text-lg font-semibold ${currentPeriodSavings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatCurrency(currentPeriodSavings)}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <Target className="h-8 w-8 text-purple-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Savings Rate</p>
+              <p className={`text-lg font-semibold ${currentSavingsRate >= 20 ? 'text-green-600' : currentSavingsRate >= 10 ? 'text-yellow-600' : 'text-red-600'}`}>
+                {currentSavingsRate.toFixed(1)}%
               </p>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Savings Rate Indicator */}
+      {excludeInternalTransfers && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Savings Rate Health Check</h3>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="w-full bg-gray-200 rounded-full h-4">
+                <div 
+                  className={`h-4 rounded-full transition-all duration-300 ${
+                    currentSavingsRate >= 20 ? 'bg-green-500' : 
+                    currentSavingsRate >= 10 ? 'bg-yellow-500' : 
+                    'bg-red-500'
+                  }`}
+                  style={{ width: `${Math.min(Math.max(currentSavingsRate, 0), 50)}%` }}
+                ></div>
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 mt-2">
+                <span>0%</span>
+                <span>10%</span>
+                <span>20%</span>
+                <span>30%+</span>
+              </div>
+            </div>
+            <div className="ml-6 text-right">
+              <p className="text-2xl font-bold text-gray-900">{currentSavingsRate.toFixed(1)}%</p>
+              <p className="text-sm text-gray-500">
+                {currentSavingsRate >= 20 ? 'Excellent!' : 
+                 currentSavingsRate >= 10 ? 'Good progress' : 
+                 'Room for improvement'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
