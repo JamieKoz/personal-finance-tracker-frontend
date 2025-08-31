@@ -1,6 +1,6 @@
 import { DollarSign, TrendingUp, TrendingDown, FileText, Tag } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-import { TransactionSummary } from '@/types/transaction';
+import { TransactionSummary } from '@/types/Transactions/transactionSummary';
 
 
 interface SummaryCardsProps {

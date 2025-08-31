@@ -5,7 +5,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Calendar, TrendingUp, PieChart as PieChartIcon, BarChart as BarChartIcon, Filter, X, Wallet, TrendingDown, DollarSign, Target } from 'lucide-react';
 import { apiService } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
-import { Transaction, TransactionSummary, Category } from '@/types/transaction';
+import { Transaction } from '@/types/Transactions/transaction';
+import { Category } from '@/types/Categories/category';
+import { TransactionSummary } from '@/types/Transactions/transactionSummary';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 

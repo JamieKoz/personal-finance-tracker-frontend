@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { X, Tag, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { apiService } from '@/lib/api';
-import { Transaction, Category, CreateCategoryRequest } from '@/types/transaction';
+import { Transaction } from '@/types/Transactions/transaction';
+import { Category } from '@/types/Categories/category';
+import { CreateCategoryRequest } from '@/types/Requests/createCategoryRequest';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useToast } from '@/components/ToastSystem';
 

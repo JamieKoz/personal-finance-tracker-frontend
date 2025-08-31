@@ -1,4 +1,11 @@
-import { Transaction, PagedResponse, TransactionSummary, Category, CategorizeRequest, CreateCategoryRequest, TransactionFilters } from '@/types/transaction';
+import { Transaction } from '@/types/Transactions/transaction';
+import { PagedResponse } from '@/types/Pagination/pagedResponse';
+import { CategorizeRequest } from '@/types/Requests/categorizeRequest';
+import { CreateCategoryRequest } from '@/types/Requests/createCategoryRequest';
+import { Category } from '@/types/Categories/category';
+import { TransactionFilters } from '@/types/Transactions/transactionFilters';
+import { TransactionSummary } from '@/types/Transactions/transactionSummary';
+
 
 const API_BASE = 'http://127.0.0.1:8000';
 

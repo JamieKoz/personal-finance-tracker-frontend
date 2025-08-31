@@ -1,4 +1,4 @@
-import { Transaction } from '@/types/transaction';
+import { Transaction } from '@/types/Transactions/transaction';
 
 export const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('en-US', {

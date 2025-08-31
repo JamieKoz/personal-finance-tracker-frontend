@@ -3,7 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PieChart, AlertCircle, Tag } from 'lucide-react';
 import { apiService } from '@/lib/api';
-import { Transaction, TransactionSummary, PaginationInfo, TransactionFilters } from '@/types/transaction';
+import { Transaction } from '@/types/Transactions/transaction';
+import { PaginationInfo } from '@/types/Pagination/paginationInfo';
+import { TransactionSummary } from '@/types/Transactions/transactionSummary';
+import { TransactionFilters } from '@/types/Transactions/transactionFilters';
 import FileUpload from '@/components/FileUpload';
 import SummaryCards from '@/components/SummaryCards';
 import TransactionsTable from '@/components/TransactionsTable';

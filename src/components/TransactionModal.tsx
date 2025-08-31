@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Transaction, Category } from '@/types/transaction';
+import { Transaction } from '@/types/Transactions/transaction';
+import { Category } from '@/types/Categories/category';
 import { apiService } from '@/lib/api';
 import { useToast } from '@/components/ToastSystem';
 import { Edit3, Save, X } from 'lucide-react';

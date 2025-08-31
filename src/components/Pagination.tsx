@@ -1,6 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { PaginationInfo } from '@/types/transaction';
-
+import { PaginationInfo } from '@/types/Pagination/paginationInfo';
 interface PaginationProps {
   pagination: PaginationInfo;
   onPageChange: (page: number) => void;

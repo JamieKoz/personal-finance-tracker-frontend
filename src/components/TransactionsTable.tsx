@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FileText, Search, X } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Transaction } from '@/types/transaction';
+import { Transaction } from '@/types/Transactions/transaction';
 
 interface TransactionsTableProps {
   transactions: Transaction[];
