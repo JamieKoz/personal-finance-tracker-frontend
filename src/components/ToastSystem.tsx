@@ -2,17 +2,8 @@
 
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-
-interface Toast {
-  id: string;
-  message: string;
-  type: 'success' | 'error' | 'info';
-  duration?: number;
-}
-
-interface ToastContextType {
-  showToast: (message: string, type: 'success' | 'error' | 'info', duration?: number) => void;
-}
+import { Toast } from '@/interfaces/toast';
+import { ToastContextType } from '@/interfaces/toastContextType';
 
 export const ToastContext = React.createContext<ToastContextType>({
   showToast: () => {},

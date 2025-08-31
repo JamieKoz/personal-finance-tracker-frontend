@@ -1,13 +1,8 @@
 import { DollarSign, TrendingUp, TrendingDown, FileText, Tag } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { TransactionSummary } from '@/types/Transactions/transactionSummary';
+import { SummaryCardsProps } from '@/interfaces/Props/summaryCardsProps';
 
-
-interface SummaryCardsProps {
-  summary: TransactionSummary;
-  uncategorizedCount: number;
-  onCategorizeClick: () => void;
-}
 
 export default function SummaryCards({ summary, uncategorizedCount, onCategorizeClick }: SummaryCardsProps) {
   const currentBalance = summary.currentBalance || 0; // Handle undefined

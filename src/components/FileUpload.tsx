@@ -2,13 +2,7 @@
 import { useState } from 'react';
 import { Upload } from 'lucide-react';
 import { apiService } from '@/lib/api';
-
-interface FileUploadProps {
-  onUploadSuccess: () => void;
-  isUploading: boolean;
-  setIsUploading: (uploading: boolean) => void;
-  compact?: boolean;
-}
+import { FileUploadProps } from '@/interfaces/Props/fileUploadProps';
 
 export default function FileUpload({ onUploadSuccess, isUploading, setIsUploading, compact = false }: FileUploadProps) {
   const [dragActive, setDragActive] = useState<boolean>(false);
@@ -94,7 +88,6 @@ export default function FileUpload({ onUploadSuccess, isUploading, setIsUploadin
     );
   }
 
-  // Full drag-and-drop interface
   return (
     <div className="mb-8">
       <div

@@ -8,12 +8,9 @@ import { formatCurrency } from '@/lib/utils';
 import { Transaction } from '@/types/Transactions/transaction';
 import { Category } from '@/types/Categories/category';
 import { TransactionSummary } from '@/types/Transactions/transactionSummary';
+import { ChartsProps } from '@/interfaces/Props/chartsProps';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-
-interface ChartsProps {
-  summary: TransactionSummary;
-}
 
 export default function FinancialCharts({ summary }: ChartsProps) {
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
@@ -435,7 +432,8 @@ export default function FinancialCharts({ summary }: ChartsProps) {
           </div>
         </div>
       )}
-
+      
+      {/* Category Chart */}
       {activeChart === 'categories' && (
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -450,7 +448,7 @@ export default function FinancialCharts({ summary }: ChartsProps) {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                  label={({ name, percent }) => `${name} (${percent ? (percent * 100).toFixed(0) : 0}%)`}
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"

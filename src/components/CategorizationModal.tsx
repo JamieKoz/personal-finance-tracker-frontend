@@ -8,12 +8,7 @@ import { Category } from '@/types/Categories/category';
 import { CreateCategoryRequest } from '@/types/Requests/createCategoryRequest';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useToast } from '@/components/ToastSystem';
-
-interface TransactionCategorizerProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-}
+import { TransactionCategorizerProps } from '@/interfaces/Props/transactionCategorizerProps';
 
 export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: TransactionCategorizerProps) {
   const [uncategorizedTransactions, setUncategorizedTransactions] = useState<Transaction[]>([]);

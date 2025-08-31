@@ -34,6 +34,18 @@ async function handleResponse<T>(response: Response): Promise<T> {
 }
 
 export const apiService = {
+  async uploadCSV(file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(`${API_BASE}/api/Transaction/upload-csv`, {
+      method: "POST",
+      body: formData,
+    });
+
+    return handleResponse<any>(response);
+  },
+
   async getTransactions(
     page: number = 1, 
     pageSize: number = 50,
