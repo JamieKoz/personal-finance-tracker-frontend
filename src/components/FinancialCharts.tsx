@@ -234,7 +234,7 @@ export default function FinancialCharts({ summary }: ChartsProps) {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white dark:bg-gray-800 dark:bg-gray-800 rounded-lg shadow p-6">
         <div className="animate-pulse">
           <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
           <div className="h-64 bg-gray-200 rounded"></div>
@@ -246,7 +246,7 @@ export default function FinancialCharts({ summary }: ChartsProps) {
   return (
     <div className="space-y-6 mb-6">
       {/* Chart Navigation with Filter Toggle */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <div className="flex justify-between items-center mb-4">
           <div className="flex space-x-4 overflow-x-auto">
             <button
@@ -254,7 +254,7 @@ export default function FinancialCharts({ summary }: ChartsProps) {
               className={`flex items-center px-4 py-2 rounded-md whitespace-nowrap ${
                 activeChart === 'savings'
                   ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-900 dark:border-white dark:border'
               }`}
             >
               <Target className="h-4 w-4 mr-2" />
@@ -265,8 +265,8 @@ export default function FinancialCharts({ summary }: ChartsProps) {
               onClick={() => setActiveChart('categories')}
               className={`flex items-center px-4 py-2 rounded-md whitespace-nowrap ${
                 activeChart === 'categories'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-600 dark:bg-purple-500 hover:bg-purple-700 dark:hover:bg-purple-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-900 dark:border-white dark:border'
               }`}
             >
               <PieChartIcon className="h-4 w-4 mr-2" />
@@ -277,8 +277,8 @@ export default function FinancialCharts({ summary }: ChartsProps) {
               onClick={() => setActiveChart('monthly')}
               className={`flex items-center px-4 py-2 rounded-md whitespace-nowrap ${
                 activeChart === 'monthly'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-900 dark:border-white dark:border'
               }`}
             >
               <BarChartIcon className="h-4 w-4 mr-2" />
@@ -290,8 +290,8 @@ export default function FinancialCharts({ summary }: ChartsProps) {
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center px-3 py-2 rounded-md text-sm ${
               showFilters
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-900 dark:border-white dark:border'
             }`}
           >
             <Filter className="h-4 w-4 mr-2" />
@@ -316,19 +316,19 @@ export default function FinancialCharts({ summary }: ChartsProps) {
                   onChange={(e) => setExcludeInternalTransfers(e.target.checked)}
                   className="mr-2"
                 />
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-gray-700 dark:text-white">
                   Exclude Internal Transfers (Shows actual spending/income only)
                 </span>
               </label>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Filters out transfers between your accounts, credit card payments, loan payments, etc.
               </p>
             </div>
 
             {/* Date Range Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
-              <div className="flex gap-4 text-black">
+              <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-white">Date Range</label>
+              <div className="flex gap-4 text-black dark:text-white">
                 <DatePicker
                   selected={dateFrom ? new Date(dateFrom) : null}
                   onChange={(date: Date | null) =>
@@ -353,7 +353,7 @@ export default function FinancialCharts({ summary }: ChartsProps) {
 
             {/* Category Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-white">
                 Exclude Categories ({excludedCategories.length} excluded)
               </label>
               <div className="flex flex-wrap gap-2">
@@ -383,11 +383,11 @@ export default function FinancialCharts({ summary }: ChartsProps) {
             <div className="flex justify-between">
               <button
                 onClick={clearFilters}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-white"
               >
                 Clear All Filters
               </button>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-gray-500 dark:text-gray-400">
                 Showing {filteredTransactions.length} of {allTransactions.length} transactions
                 {excludeInternalTransfers && (
                   <span className="text-green-600 font-medium"> (transfers excluded)</span>
@@ -400,8 +400,8 @@ export default function FinancialCharts({ summary }: ChartsProps) {
 
       {/* Savings Analysis Chart */}
       {activeChart === 'savings' && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
             <Target className="h-5 w-5 mr-2 text-green-600" />
             Savings Rate Analysis
             {excludeInternalTransfers && (
@@ -436,8 +436,8 @@ export default function FinancialCharts({ summary }: ChartsProps) {
       
       {/* Category Chart */}
       {activeChart === 'categories' && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
             <PieChartIcon className="h-5 w-5 mr-2 text-blue-600" />
             Spending by Category
           </h3>
@@ -467,8 +467,8 @@ export default function FinancialCharts({ summary }: ChartsProps) {
 
       {/* Monthly Trends (existing chart) */}
       {activeChart === 'monthly' && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
             <BarChartIcon className="h-5 w-5 mr-2 text-blue-600" />
             Monthly Trends
             {excludeInternalTransfers && (
@@ -496,39 +496,39 @@ export default function FinancialCharts({ summary }: ChartsProps) {
 
       {/* Enhanced Summary Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center">
             <DollarSign className="h-8 w-8 text-green-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 ">
                 {excludeInternalTransfers ? 'Actual Income' : 'Total Income'}
               </p>
-              <p className="text-lg font-semibold text-gray-900">
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">
                 {formatCurrency(currentPeriodIncome)}
               </p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center">
             <TrendingDown className="h-8 w-8 text-red-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                 {excludeInternalTransfers ? 'Actual Spending' : 'Total Spending'}
               </p>
-              <p className="text-lg font-semibold text-gray-900">
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">
                 {formatCurrency(currentPeriodSpending)}
               </p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center">
             <Wallet className="h-8 w-8 text-blue-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Net Savings</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Net Savings</p>
               <p className={`text-lg font-semibold ${currentPeriodSavings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatCurrency(currentPeriodSavings)}
               </p>
@@ -536,11 +536,11 @@ export default function FinancialCharts({ summary }: ChartsProps) {
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center">
             <Target className="h-8 w-8 text-purple-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Savings Rate</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Savings Rate</p>
               <p className={`text-lg font-semibold ${currentSavingsRate >= 20 ? 'text-green-600' : currentSavingsRate >= 10 ? 'text-yellow-600' : 'text-red-600'}`}>
                 {currentSavingsRate.toFixed(1)}%
               </p>
@@ -551,8 +551,8 @@ export default function FinancialCharts({ summary }: ChartsProps) {
 
       {/* Savings Rate Indicator */}
       {excludeInternalTransfers && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Savings Rate Health Check</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Savings Rate Health Check</h3>
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="w-full bg-gray-200 rounded-full h-4">
@@ -565,7 +565,7 @@ export default function FinancialCharts({ summary }: ChartsProps) {
                   style={{ width: `${Math.min(Math.max(currentSavingsRate, 0), 50)}%` }}
                 ></div>
               </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-2">
+              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
                 <span>0%</span>
                 <span>10%</span>
                 <span>20%</span>
@@ -573,8 +573,8 @@ export default function FinancialCharts({ summary }: ChartsProps) {
               </div>
             </div>
             <div className="ml-6 text-right">
-              <p className="text-2xl font-bold text-gray-900">{currentSavingsRate.toFixed(1)}%</p>
-              <p className="text-sm text-gray-500">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{currentSavingsRate.toFixed(1)}%</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {currentSavingsRate >= 20 ? 'Excellent!' : 
                  currentSavingsRate >= 10 ? 'Good progress' : 
                  'Room for improvement'}

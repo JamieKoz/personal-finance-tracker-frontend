@@ -5,19 +5,19 @@ export default function Pagination({ pagination, onPageChange }: PaginationProps
   const { page, totalPages, hasNextPage, hasPreviousPage } = pagination;
 
   return (
-    <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+    <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
       <div className="flex-1 flex justify-between sm:hidden">
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={!hasPreviousPage}
-          className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-700 text-sm font-medium rounded-md text-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Previous
         </button>
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={!hasNextPage}
-          className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-700 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Next
         </button>
@@ -25,7 +25,7 @@ export default function Pagination({ pagination, onPageChange }: PaginationProps
       
       <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-gray-700 dark:text-white">
             Showing page <span className="font-medium">{page}</span> of{' '}
             <span className="font-medium">{totalPages}</span>
             {' '}({pagination.totalItems.toLocaleString()} total transactions)
@@ -36,7 +36,7 @@ export default function Pagination({ pagination, onPageChange }: PaginationProps
             <button
               onClick={() => onPageChange(page - 1)}
               disabled={!hasPreviousPage}
-              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-700 bg-white text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 dark:bg-gray-800 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -60,8 +60,8 @@ export default function Pagination({ pagination, onPageChange }: PaginationProps
                   onClick={() => onPageChange(pageNum)}
                   className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                     pageNum === page
-                      ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                      ? 'z-10 bg-blue-50 border-blue-500 text-blue-600 dark:bg-blue-600 dark:text-white'
+                      : 'bg-white border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900'
                   }`}
                 >
                   {pageNum}
@@ -72,7 +72,7 @@ export default function Pagination({ pagination, onPageChange }: PaginationProps
             <button
               onClick={() => onPageChange(page + 1)}
               disabled={!hasNextPage}
-              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-700 bg-white text-sm font-medium text-gray-500 dark:text-gray-400 dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronRight className="h-5 w-5" />
             </button>

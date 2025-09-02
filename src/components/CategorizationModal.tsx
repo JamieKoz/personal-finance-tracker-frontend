@@ -165,16 +165,16 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
     <div className="fixed inset-0 overflow-y-auto h-full w-full z-50">
 
       <div
-        className="absolute inset-0 bg-gray-100 opacity-70"
+        className="absolute inset-0 bg-gray-100 dark:bg-gray-900 opacity-70"
       >
       </div>
-      <div className="relative top-4 mx-auto p-8 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+      <div className="relative top-4 mx-auto p-8 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
             <Tag className="h-6 w-6 mr-2 text-blue-600" />
             Categorize Transactions
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-300">
             <X className="h-6 w-6" />
           </button>
         </div>
@@ -182,18 +182,18 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-sm text-gray-600">Loading transactions...</p>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">Loading transactions...</p>
           </div>
         ) : uncategorizedTransactions.length === 0 ? (
           <div className="text-center py-12">
             <Tag className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">All transactions categorized!</h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">All transactions categorized!</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
               No uncategorized transactions found.
             </p>
             <button
               onClick={onClose}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="mt-4 px-4 py-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               Close
             </button>
@@ -201,7 +201,7 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
         ) : (
           <div className="space-y-10">
             {/* Progress */}
-            <div className="flex justify-between items-center text-sm text-gray-600">
+            <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-300">
               <span>Transaction {currentIndex + 1} of {uncategorizedTransactions.length}</span>
               <div className="flex space-x-2">
                 <button
@@ -221,21 +221,21 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
 
             {/* Current Transaction */}
             {currentTransaction && (
-              <div className="border rounded-lg p-4 bg-gray-50">
+              <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Date</label>
-                    <p className="text-sm text-gray-900">{formatDate(currentTransaction.date)}</p>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-400">Date</label>
+                    <p className="text-sm text-gray-900 dark:text-white">{formatDate(currentTransaction.date)}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Amount</label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-400">Amount</label>
                     <p className={`text-sm font-medium ${currentTransaction.credit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {formatCurrency(currentTransaction.credit)}
                     </p>
                   </div>
                   <div className="col-span-2">
-                    <label className="text-sm font-medium text-gray-700">Description</label>
-                    <p className="text-sm text-gray-900">{currentTransaction.description}</p>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-400">Description</label>
+                    <p className="text-sm text-gray-900 dark:text-white">{currentTransaction.description}</p>
                   </div>
                 </div>
               </div>
@@ -244,10 +244,10 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
             {/* Category Selection */}
             <div>
               <div className="flex justify-between items-center mb-3">
-                <h4 className="text-lg font-medium text-gray-900">Select Category</h4>
+                <h4 className="text-lg font-medium text-gray-900 dark:text-white">Select Category</h4>
                 <button
                   onClick={() => setShowCreateCategory(!showCreateCategory)}
-                  className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
+                  className="text-blue-600 hover:text-blue-800 text-sm flex items-center dark:text-blue-300 dark:hover:text-blue-400"
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   New Category
@@ -256,18 +256,18 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
 
               {/* Create New Category */}
               {showCreateCategory && (
-                <div className="mb-4 p-4 border rounded-lg bg-gray-50">
+                <div className="mb-4 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
                   <div className="space-y-3">
                     <input
                       type="text"
                       placeholder="Category name"
                       value={newCategoryName}
                       onChange={(e) => setNewCategoryName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white"
                     />
                     
                     <div>
-                      <label className="block text-sm text-gray-600 mb-2">Color</label>
+                      <label className="block text-sm text-gray-600 dark:text-gray-300 mb-2">Color</label>
                       <div className="flex flex-wrap gap-2">
                         {colorOptions.map((color) => (
                           <button
@@ -286,7 +286,7 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
                       <button
                         onClick={handleCreateCategory}
                         disabled={!newCategoryName.trim() || loading}
-                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+                        className="px-3 py-1 bg-blue-600 dark:bg-blue-400 hover:bg-blue-700 dark:hover:bg-blue-600 text-white text-sm rounded-md disabled:opacity-50"
                       >
                         Create
                       </button>
@@ -308,7 +308,7 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
                     key={category.id}
                     onClick={() => handleCategorizeTransaction(category.id, category.name)}
                     disabled={categorizing}
-                    className="p-3 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors text-left disabled:opacity-50"
+                    className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors text-left disabled:opacity-50"
                   >
                     <div className="flex items-center">
                       <div
@@ -316,10 +316,10 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
                         style={{ backgroundColor: category.color }}
                       />
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-gray-900 truncate">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
                           {category.name}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
                           {category.transactionCount} transactions
                         </div>
                       </div>
@@ -330,24 +330,24 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-between pt-4 border-t">
+            <div className="flex justify-between pt-4 border-t dark:border-none">
               <button
                 onClick={handleSkip}
-                className="px-4 py-2 text-gray-600 bg-gray-200 rounded-md hover:bg-gray-300"
+                className="px-4 py-2 text-gray-600 dark:text-white bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-yellow-600 dark:hover:bg-yellow-700"
                 disabled={categorizing}
               >
                 Skip This Transaction
               </button>
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-red-700 dark:hover:bg-red-800 dark:text-white"
               >
                 Close
               </button>
             </div>
 
             {categorizing && (
-              <div className="text-center text-sm text-gray-600">
+              <div className="text-center text-sm text-gray-600 dark:text-gray-300">
                 <div className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent mr-2" />
                 Categorizing transaction...
               </div>

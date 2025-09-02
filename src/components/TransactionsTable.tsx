@@ -71,23 +71,23 @@ export default function TransactionsTable({
   };
 
   return (
-    <div className="bg-white shadow rounded-lg">
-      <div className="px-6 py-4 border-b border-gray-200">
+    <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h3 className="text-lg font-medium text-gray-900">Transactions</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Transactions</h3>
           
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
             {/* Search Input */}
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-black" />
+                <Search className="h-4 w-4 text-black dark:text-white" />
               </div>
               <input
                 type="text"
                 value={searchTerm}
                 onChange={handleSearchChange}
                 placeholder="Search transactions..."
-                className="block w-full sm:w-64 pl-10 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 text-black"
+                className="block w-full sm:w-64 pl-10 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
               />
               {searchTerm && (
                 <button
@@ -103,7 +103,7 @@ export default function TransactionsTable({
             <select
               value={filterCategory}
               onChange={handleCategoryChange}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm text-black focus:ring-blue-500 focus:border-blue-500"
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm text-black dark:text-white focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Categories</option>
               {categories.map(category => (
@@ -149,11 +149,11 @@ export default function TransactionsTable({
             <p className="mt-2 text-sm text-gray-600">Loading transactions...</p>
           </div>
         ) : (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
                 <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-950"
                   onClick={() => handleSort('date')}
                 >
                   Date
@@ -162,7 +162,7 @@ export default function TransactionsTable({
                   )}
                 </th>
                 <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-950"
                   onClick={() => handleSort('description')}
                 >
                   Description
@@ -171,7 +171,7 @@ export default function TransactionsTable({
                   )}
                 </th>
                 <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-950"
                   onClick={() => handleSort('category')}
                 >
                   Category
@@ -180,7 +180,7 @@ export default function TransactionsTable({
                   )}
                 </th>
                 <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-950"
                   onClick={() => handleSort('credit')}
                 >
                   Amount
@@ -189,7 +189,7 @@ export default function TransactionsTable({
                   )}
                 </th>
                 <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-950"
                   onClick={() => handleSort('balance')}
                 >
                   Balance
@@ -199,17 +199,17 @@ export default function TransactionsTable({
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {transactions.map((transaction) => (
                 <tr 
                   key={transaction.id} 
-                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer transition-colors"
                   onClick={() => onTransactionClick(transaction)}
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {formatDate(transaction.date)}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                     <div className="max-w-xs truncate" title={transaction.description}>
                       {searchTerm && transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ? (
                         <span dangerouslySetInnerHTML={{
@@ -223,7 +223,7 @@ export default function TransactionsTable({
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
                       {transaction.category || 'Uncategorized'}
                     </span>
@@ -233,7 +233,7 @@ export default function TransactionsTable({
                       {formatCurrency(transaction.credit)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {formatCurrency(transaction.balance)}
                   </td>
                 </tr>
@@ -246,8 +246,8 @@ export default function TransactionsTable({
       {!loading && transactions.length === 0 && (
         <div className="text-center py-12">
           <FileText className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No transactions found</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white ">No transactions found</h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {searchTerm || filterCategory ? 'Try adjusting your search or filters.' : 'Upload a CSV file to get started.'}
           </p>
         </div>

@@ -95,13 +95,13 @@ export default function TransactionModal({ transaction, isOpen, onClose, onTrans
       onClick={handleBackdropClick}
     >
       <div
-        className="absolute inset-0 bg-gray-100 opacity-70"
+        className="absolute inset-0 bg-gray-100 dark:bg-gray-900 opacity-70"
         onClick={handleBackdropClick}>
       </div>
-      <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white z-10">
+      <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 z-10">
         <div className="mt-3">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Transaction Details</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Transaction Details</h3>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 text-xl leading-none"
@@ -113,19 +113,19 @@ export default function TransactionModal({ transaction, isOpen, onClose, onTrans
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Date</label>
-              <p className="mt-1 text-sm text-gray-900">{formatDate(transaction.date)}</p>
+              <label className="block text-sm font-medium text-gray-700 dark:text-white">Date</label>
+              <p className="mt-1 text-sm text-gray-900 dark:text-white">{formatDate(transaction.date)}</p>
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700">Description</label>
-              <p className="mt-1 text-sm text-gray-900">{transaction.description}</p>
+              <label className="block text-sm font-medium text-gray-700 dark:text-white">Description</label>
+              <p className="mt-1 text-sm text-gray-900 dark:text-white">{transaction.description}</p>
             </div>
             
             {/* Enhanced Category Section */}
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-medium text-gray-700">Category</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-white">Category</label>
                 {!isEditing && (
                   <button
                     onClick={() => setIsEditing(true)}
@@ -145,7 +145,7 @@ export default function TransactionModal({ transaction, isOpen, onClose, onTrans
                       style={{ backgroundColor: currentCategory.color }}
                     />
                   )}
-                  <p className="text-sm text-gray-900">{transaction.category || 'Uncategorized'}</p>
+                  <p className="text-sm text-gray-900 dark:text-white">{transaction.category || 'Uncategorized'}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -154,7 +154,7 @@ export default function TransactionModal({ transaction, isOpen, onClose, onTrans
                       <button
                         key={category.id}
                         onClick={() => setSelectedCategoryId(category.id)}
-                        className={`w-full p-2 text-left hover:bg-gray-50 flex items-center ${
+                        className={`w-full p-2 text-left hover:bg-gray-50 dark:hover:bg-gray-900 dark:bg-gray-800 flex items-center ${
                           selectedCategoryId === category.id ? 'bg-blue-50 border-blue-200' : ''
                         }`}
                       >
@@ -162,9 +162,9 @@ export default function TransactionModal({ transaction, isOpen, onClose, onTrans
                           className="w-3 h-3 rounded-full mr-2 flex-shrink-0"
                           style={{ backgroundColor: category.color }}
                         />
-                        <span className="text-sm text-gray-900 flex-1">{category.name}</span>
+                        <span className="text-sm text-gray-900 dark:text-white flex-1">{category.name}</span>
                         {selectedCategoryId === category.id && (
-                          <div className="w-2 h-2 bg-blue-600 rounded-full" />
+                          <div className="w-2 h-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 rounded-full" />
                         )}
                       </button>
                     ))}
@@ -174,7 +174,7 @@ export default function TransactionModal({ transaction, isOpen, onClose, onTrans
                     <button
                       onClick={handleCategoryUpdate}
                       disabled={updating || !selectedCategoryId}
-                      className="flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+                      className="flex items-center px-3 py-1 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white text-sm rounded-md disabled:opacity-50"
                     >
                       {updating ? (
                         <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent mr-1" />
@@ -186,7 +186,7 @@ export default function TransactionModal({ transaction, isOpen, onClose, onTrans
                     <button
                       onClick={handleCancel}
                       disabled={updating}
-                      className="flex items-center px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-400"
+                      className="flex items-center px-3 py-1 bg-gray-300 text-gray-700 dark:text-white text-sm rounded-md hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-900"
                     >
                       <X className="h-3 w-3 mr-1" />
                       Cancel
@@ -197,15 +197,15 @@ export default function TransactionModal({ transaction, isOpen, onClose, onTrans
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700">Amount</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-white">Amount</label>
               <p className={`mt-1 text-sm font-medium ${transaction.credit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatCurrency(transaction.credit)}
               </p>
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700">Balance After</label>
-              <p className="mt-1 text-sm text-gray-900">{formatCurrency(transaction.balance)}</p>
+              <label className="block text-sm font-medium text-gray-700 dark:text-white">Balance After</label>
+              <p className="mt-1 text-sm text-gray-900 dark:text-white">{formatCurrency(transaction.balance)}</p>
             </div>
             
           </div>

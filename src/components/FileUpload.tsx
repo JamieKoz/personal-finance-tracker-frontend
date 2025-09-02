@@ -66,8 +66,8 @@ export default function FileUpload({ onUploadSuccess, isUploading, setIsUploadin
         <button
           className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
             isUploading
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
+              ? 'bg-gray-300 text-gray-500 dark:text-gray-400 dark:text-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white'
           }`}
           disabled={isUploading}
           onClick={() => !isUploading && document.getElementById('compact-file-upload')?.click()}
@@ -109,10 +109,10 @@ export default function FileUpload({ onUploadSuccess, isUploading, setIsUploadin
         />
         <label htmlFor="file-upload" className="cursor-pointer">
           <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <div className="text-lg font-medium text-gray-900 mb-2">
+          <div className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             {isUploading ? 'Uploading...' : 'Upload CSV File'}
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
             Drag and drop your transaction CSV file here, or click to select
           </div>
         </label>

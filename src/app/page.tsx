@@ -14,7 +14,7 @@ import TransactionModal from '@/components/TransactionModal';
 import Pagination from '@/components/Pagination';
 import CategorizationModal from '@/components/CategorizationModal';
 import FinancialCharts from '@/components/FinancialCharts';
-
+import DarkModeToggle from '@/components/DarkModeToggle';
 export default function Home() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [summary, setSummary] = useState<TransactionSummary | null>(null);
@@ -108,22 +108,23 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Navigation Header */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+      <nav className="bg-white dark:bg-gray-800 dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo and Title */}
             <div className="flex items-center">
               <PieChart className="h-8 w-8 text-blue-600 mr-3" />
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Personal Finance Tracker</h1>
-                <p className="text-xs text-gray-500">Track your financial activity</p>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Personal Finance Tracker</h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Track your financial activity</p>
               </div>
             </div>
 
             {/* Upload and Actions Section */}
             <div className="flex items-center space-x-4">
+              <DarkModeToggle />
               {uncategorizedCount > 0 && (
                 <button
                   onClick={() => setShowCategorizationModal(true)}
@@ -184,12 +185,12 @@ export default function Home() {
         {summaryLoading && (
           <div className="mb-8 text-center py-8">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-sm text-gray-600">Loading dashboard...</p>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">Loading dashboard...</p>
           </div>
         )}
 
         {/* Transactions Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden mb-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden mb-8">
           <TransactionsTable 
             transactions={transactions} 
             onTransactionClick={handleTransactionClick}
