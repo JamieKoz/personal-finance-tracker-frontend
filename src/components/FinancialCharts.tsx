@@ -175,8 +175,9 @@ export default function FinancialCharts({ summary }: ChartsProps) {
       data.savingsRate = data.income > 0 ? (data.savings / data.income) * 100 : 0;
     });
 
-    return Array.from(monthlyData.values())
-      .sort((a, b) => a.month.localeCompare(b.month));
+    return Array.from(monthlyData.entries())
+      .map(([monthKey, data]) => ({ monthKey, ...data }))
+      .sort((a, b) => a.monthKey.localeCompare(b.monthKey)); // Sort by YYYY-MM format
   };
 
   const handleCategoryToggle = (categoryName: string) => {
