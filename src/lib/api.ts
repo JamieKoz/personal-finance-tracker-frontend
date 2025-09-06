@@ -6,10 +6,26 @@ import { Category } from '@/types/Categories/category';
 import { TransactionFilters } from '@/types/Transactions/transactionFilters';
 import { TransactionSummary } from '@/types/Transactions/transactionSummary';
 
+const API_BASE = 'http://127.0.0.1:8000'; // Update to match your .NET API port
 
-const API_BASE = 'http://127.0.0.1:8000';
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem('auth_token');
+  return {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` }),
+  };
+}
 
 async function handleResponse<T>(response: Response): Promise<T> {
+  if (response.status === 401) {
+    // Token expired or invalid
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
+    window.location.reload(); // This will trigger the auth flow
+    throw new Error('Authentication required');
+  }
+
   if (!response.ok) {
     const errorText = await response.text().catch(() => 'Unknown error');
     throw new Error(`API Error ${response.status}: ${errorText}`);
@@ -35,11 +51,15 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
 export const apiService = {
   async uploadCSV(file: File): Promise<any> {
+    const token = localStorage.getItem('auth_token');
     const formData = new FormData();
     formData.append("file", file);
 
     const response = await fetch(`${API_BASE}/api/Transaction/upload-csv`, {
       method: "POST",
+      headers: {
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
       body: formData,
     });
 
@@ -69,14 +89,17 @@ export const apiService = {
       params.append('category', filters.category);
     }
 
-    const response = await fetch(`${API_BASE}/api/Transaction?${params}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch transactions: ${response.statusText}`);
-    }
-    return response.json();
+    const token = localStorage.getItem('auth_token');
+    const response = await fetch(`${API_BASE}/api/Transaction?${params}`, {
+      headers: {
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+    });
+    
+    return handleResponse<PagedResponse<Transaction>>(response);
   },
 
- async getTransactionSummary(excludeInternalTransfers: boolean = false): Promise<TransactionSummary> {
+  async getTransactionSummary(excludeInternalTransfers: boolean = false): Promise<TransactionSummary> {
     try {
       const params = new URLSearchParams();
       if (excludeInternalTransfers) {
@@ -86,19 +109,14 @@ export const apiService = {
       const url = `${API_BASE}/api/Transaction/summary${params.toString() ? '?' + params.toString() : ''}`;
       console.log('Fetching summary with URL:', url);
       
-      const response = await fetch(url);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(url, {
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Summary API Error:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText
-        });
-        throw new Error(`Failed to fetch summary: ${response.status} ${response.statusText}`);
-      }
-      
-      return response.json();
+      return handleResponse<TransactionSummary>(response);
     } catch (error) {
       console.error('Error in getTransactionSummary:', error);
       throw error;
@@ -109,9 +127,7 @@ export const apiService = {
     try {
       const response = await fetch(`${API_BASE}/api/Transaction/${id}`, {
         method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
+        headers: getAuthHeaders(),
       });
       
       return await handleResponse<Transaction>(response);
@@ -121,91 +137,77 @@ export const apiService = {
     }
   },
 
-async getCategories(): Promise<Category[]> {
-  try {
-    const response = await fetch(`${API_BASE}/api/Category`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
-    
-    return await handleResponse<Category[]>(response);
-  } catch (error) {
-    console.error('Get categories error:', error);
-    throw new Error(`Failed to fetch categories: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-},
+  async getCategories(): Promise<Category[]> {
+    try {
+      const response = await fetch(`${API_BASE}/api/Category`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+      
+      return await handleResponse<Category[]>(response);
+    } catch (error) {
+      console.error('Get categories error:', error);
+      throw new Error(`Failed to fetch categories: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
 
-async createCategory(category: CreateCategoryRequest): Promise<Category> {
-  try {
-    const response = await fetch(`${API_BASE}/api/Category`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify(category),
-    });
-    
-    return await handleResponse<Category>(response);
-  } catch (error) {
-    console.error('Create category error:', error);
-    throw new Error(`Failed to create category: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-},
+  async createCategory(category: CreateCategoryRequest): Promise<Category> {
+    try {
+      const response = await fetch(`${API_BASE}/api/Category`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(category),
+      });
+      
+      return await handleResponse<Category>(response);
+    } catch (error) {
+      console.error('Create category error:', error);
+      throw new Error(`Failed to create category: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
 
-async categorizeTransactions(request: CategorizeRequest): Promise<any> {
-  try {
-    const response = await fetch(`${API_BASE}/api/Category/categorize`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify(request),
-    });
-    
-    return await handleResponse<any>(response);
-  } catch (error) {
-    console.error('Categorize transactions error:', error);
-    throw new Error(`Failed to categorize transactions: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-},
+  async categorizeTransactions(request: CategorizeRequest): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE}/api/Category/categorize`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(request),
+      });
+      
+      return await handleResponse<any>(response);
+    } catch (error) {
+      console.error('Categorize transactions error:', error);
+      throw new Error(`Failed to categorize transactions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
 
-async categorizeWithPattern(request: { transactionId: number; categoryId: number }): Promise<any> {
-  try {
-    const response = await fetch(`${API_BASE}/api/Category/categorize-with-pattern`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify(request),
-    });
-    
-    return await handleResponse<any>(response);
-  } catch (error) {
-    console.error('Categorize with pattern error:', error);
-    throw new Error(`Failed to categorize with pattern: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-},
+  async categorizeWithPattern(request: { transactionId: number; categoryId: number }): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE}/api/Category/categorize-with-pattern`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(request),
+      });
+      
+      return await handleResponse<any>(response);
+    } catch (error) {
+      console.error('Categorize with pattern error:', error);
+      throw new Error(`Failed to categorize with pattern: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
 
-async updateTransactionCategory(transactionId: number, categoryId: number): Promise<any> {
-  try {
-    const response = await fetch(`${API_BASE}/api/Transaction/${transactionId}/category`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({ categoryId }),
-    });
-    
-    return await handleResponse<any>(response);
-  } catch (error) {
-    console.error('Update transaction category error:', error);
-    throw new Error(`Failed to update transaction category: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-},
+  async updateTransactionCategory(transactionId: number, categoryId: number): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE}/api/Transaction/${transactionId}/category`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ categoryId }),
+      });
+      
+      return await handleResponse<any>(response);
+    } catch (error) {
+      console.error('Update transaction category error:', error);
+      throw new Error(`Failed to update transaction category: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
 };

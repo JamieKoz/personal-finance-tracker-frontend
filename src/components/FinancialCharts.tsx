@@ -127,7 +127,7 @@ export default function FinancialCharts({ summary }: ChartsProps) {
 
   // Process data for savings analysis chart
   const getSavingsData = () => {
-    const filteredTransactions = getFilteredTransactions();
+    const filteredTransactions = getFilteredTransactions(); // Use filtered transactions instead of allTransactions
     const monthlyData = new Map<string, { 
       month: string, 
       income: number, 
@@ -137,8 +137,8 @@ export default function FinancialCharts({ summary }: ChartsProps) {
       internalTransfers: number
     }>();
     
-    // Also track internal transfers separately
-    allTransactions.forEach(transaction => {
+    // Process filtered transactions that respect date range
+    filteredTransactions.forEach(transaction => {
       const date = new Date(transaction.date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const monthLabel = date.toLocaleDateString('en-GB', { year: 'numeric', month: 'short' });
@@ -157,9 +157,11 @@ export default function FinancialCharts({ summary }: ChartsProps) {
       const data = monthlyData.get(monthKey)!;
       const isInternal = isInternalTransfer(transaction);
       
-      if (isInternal) {
+      // Since we're now using filtered transactions, internal transfer filtering
+      // is already handled by getFilteredTransactions() if excludeInternalTransfers is true
+      if (isInternal && !excludeInternalTransfers) {
         data.internalTransfers += Math.abs(transaction.credit);
-      } else {
+      } else if (!isInternal) {
         // Only count non-internal transfers for actual income/spending
         if (transaction.credit > 0) {
           data.income += transaction.credit;
@@ -179,7 +181,6 @@ export default function FinancialCharts({ summary }: ChartsProps) {
       .map(([monthKey, data]) => ({ monthKey, ...data }))
       .sort((a, b) => a.monthKey.localeCompare(b.monthKey)); // Sort by YYYY-MM format
   };
-
   const handleCategoryToggle = (categoryName: string) => {
     setExcludedCategories(prev => 
       prev.includes(categoryName)

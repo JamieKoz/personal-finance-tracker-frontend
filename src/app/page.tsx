@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { PieChart, AlertCircle, Tag } from 'lucide-react';
+import { PieChart, AlertCircle, Tag, LogIn } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { apiService } from '@/lib/api';
 import { Transaction } from '@/types/Transactions/transaction';
 import { PaginationInfo } from '@/types/Pagination/paginationInfo';
@@ -15,7 +16,10 @@ import Pagination from '@/components/Pagination';
 import CategorizationModal from '@/components/CategorizationModal';
 import FinancialCharts from '@/components/FinancialCharts';
 import DarkModeToggle from '@/components/DarkModeToggle';
-export default function Home() {
+import AuthModal from '@/components/AuthModal';
+import UserMenu from '@/components/UserMenu';
+
+function AuthenticatedDashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [summary, setSummary] = useState<TransactionSummary | null>(null);
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
@@ -77,9 +81,8 @@ export default function Home() {
     fetchSummary();
   };
 
- const handleFiltersChange = useCallback((newFilters: TransactionFilters) => {
+  const handleFiltersChange = useCallback((newFilters: TransactionFilters) => {
     setFilters(newFilters);
-    // Reset to page 1 when filters change
     fetchTransactions(1, newFilters);
   }, []);
 
@@ -110,7 +113,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Navigation Header */}
-      <nav className="bg-white dark:bg-gray-800 dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo and Title */}
@@ -140,8 +143,11 @@ export default function Home() {
                 onUploadSuccess={handleUploadSuccess} 
                 isUploading={isUploading}
                 setIsUploading={setIsUploading}
-                compact={true} // For navigation
+                compact={true}
               />
+
+              {/* User Menu */}
+              <UserMenu />
             </div>
           </div>
         </div>
@@ -176,7 +182,7 @@ export default function Home() {
           />
         )}
 
-        {/* Charts Section - Main Focus */}
+        {/* Charts Section */}
         {summary && !summaryLoading && (
           <FinancialCharts summary={summary} />
         )}
@@ -227,4 +233,117 @@ export default function Home() {
       />
     </div>
   );
+}
+
+function UnauthenticatedLanding() {
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      {/* Navigation */}
+      <nav className="bg-white dark:bg-gray-800 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <PieChart className="h-8 w-8 text-blue-600 mr-3" />
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Personal Finance Tracker</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <DarkModeToggle />
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+              >
+                <LogIn className="h-4 w-4 mr-2" />
+                Sign In
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+        <div className="text-center">
+          <div className="mb-8">
+            <PieChart className="h-24 w-24 text-blue-600 mx-auto mb-6" />
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+              Take Control of Your
+              <span className="text-blue-600 block">Financial Future</span>
+            </h1>
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+              Upload your bank transactions, categorize your spending, and gain valuable insights into your financial habits with our powerful analytics dashboard.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors text-lg"
+            >
+              Get Started Free
+            </button>
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="px-8 py-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold rounded-lg transition-colors text-lg"
+            >
+              Sign In
+            </button>
+          </div>
+
+          {/* Features */}
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+              <div className="h-12 w-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <PieChart className="h-6 w-6 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Smart Analytics</h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Get detailed insights into your spending patterns with interactive charts and summaries.
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+              <div className="h-12 w-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <Tag className="h-6 w-6 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Auto Categorization</h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Automatically categorize transactions and apply patterns to similar future transactions.
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+              <div className="h-12 w-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="h-6 w-6 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Secure & Private</h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Your financial data is encrypted and stored securely. Only you have access to your information.
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+    </div>
+  );
+}
+
+export default function Home() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return isAuthenticated ? <AuthenticatedDashboard /> : <UnauthenticatedLanding />;
 }

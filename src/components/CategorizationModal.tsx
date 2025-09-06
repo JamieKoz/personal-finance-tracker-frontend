@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Tag, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { X, Tag, ChevronLeft, ChevronRight, Plus, AlertTriangle } from 'lucide-react';
 import { apiService } from '@/lib/api';
 import { Transaction } from '@/types/Transactions/transaction';
 import { Category } from '@/types/Categories/category';
@@ -17,6 +17,7 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
   const [loading, setLoading] = useState(false);
   const [categorizing, setCategorizing] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
+  const [bypassSmartCategorization, setBypassSmartCategorization] = useState(false);
   const { showToast } = useToast(); 
   
   // New category form
@@ -36,6 +37,11 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    // Reset bypass option when changing transactions
+    setBypassSmartCategorization(false);
+  }, [currentIndex]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -50,7 +56,7 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
       setCurrentIndex(0);
     } catch (error) {
       console.error('Failed to fetch data:', error);
-      alert('Failed to load data');
+      showToast('Failed to load data', 'error');
     } finally {
       setLoading(false);
     }
@@ -86,20 +92,34 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
     return allTransactions;
   };
 
- const handleCategorizeTransaction = async (categoryId: number, categoryName: string) => {
+  const handleCategorizeTransaction = async (categoryId: number, categoryName: string) => {
     const currentTransaction = uncategorizedTransactions[currentIndex];
     if (!currentTransaction) return;
 
     setCategorizing(true);
     try {
-      const response = await apiService.categorizeWithPattern({
-        transactionId: currentTransaction.id,
-        categoryId: categoryId
-      });
+      let response;
+      
+      if (bypassSmartCategorization) {
+        // Just update this single transaction
+        await apiService.updateTransactionCategory(currentTransaction.id, categoryId);
+        response = {
+          updatedCount: 1,
+          businessName: 'N/A - Single transaction',
+          message: `Categorized 1 transaction as "${categoryName}"`
+        };
+      } else {
+        // Use pattern matching for similar transactions
+        response = await apiService.categorizeWithPattern({
+          transactionId: currentTransaction.id,
+          categoryId: categoryId
+        });
+      }
 
-      // Use the hook that's declared at component level
       showToast(
-        `Categorized ${response.updatedCount} transactions as "${categoryName}" using pattern "${response.businessName}"`,
+        bypassSmartCategorization 
+          ? `Categorized 1 transaction as "${categoryName}"`
+          : `Categorized ${response.updatedCount} transactions as "${categoryName}" using pattern "${response.businessName}"`,
         'success',
         5000
       );
@@ -133,9 +153,10 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
       setNewCategoryName('');
       setNewCategoryColor('#6B7280');
       setShowCreateCategory(false);
+      showToast(`Created category "${createdCategory.name}"`, 'success');
     } catch (error) {
       console.error('Failed to create category:', error);
-      alert('Failed to create category');
+      showToast('Failed to create category', 'error');
     } finally {
       setLoading(false);
     }
@@ -157,17 +178,24 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
     }
   };
 
+  // Check if current transaction description seems vague
+  const isVagueDescription = (description: string) => {
+    if (!description) return false;
+    const desc = description.toLowerCase();
+    return desc.includes('money') || 
+           desc.includes('payment') || 
+           description.split(' ').length <= 3 ||
+           /^[a-zA-Z\s]+ [a-zA-Z\s]+$/.test(description.trim()); // Just two words like "Marie Pike"
+  };
+
   if (!isOpen) return null;
 
   const currentTransaction = uncategorizedTransactions[currentIndex];
+  const showVagueWarning = currentTransaction && !bypassSmartCategorization && isVagueDescription(currentTransaction.description);
 
   return (
     <div className="fixed inset-0 overflow-y-auto h-full w-full z-50">
-
-      <div
-        className="absolute inset-0 bg-gray-100 dark:bg-gray-900 opacity-70"
-      >
-      </div>
+      <div className="absolute inset-0 bg-gray-100 dark:bg-gray-900 opacity-70"></div>
       <div className="relative top-4 mx-auto p-8 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
@@ -188,31 +216,31 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
           <div className="text-center py-12">
             <Tag className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">All transactions categorized!</h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               No uncategorized transactions found.
             </p>
             <button
               onClick={onClose}
-              className="mt-4 px-4 py-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="mt-4 px-4 py-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-md"
             >
               Close
             </button>
           </div>
         ) : (
-          <div className="space-y-10">
+          <div className="space-y-6">
             {/* Progress */}
             <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-300">
               <span>Transaction {currentIndex + 1} of {uncategorizedTransactions.length}</span>
               <div className="flex space-x-2">
                 <button
                   onClick={handlePrevious}
-                  className="p-1 hover:bg-gray-100 rounded"
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 <button
                   onClick={handleSkip}
-                  className="p-1 hover:bg-gray-100 rounded"
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -241,6 +269,39 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
               </div>
             )}
 
+            {/* Bypass Smart Categorization Option */}
+            <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-700">
+              <label className="flex items-start space-x-3">
+                <input
+                  type="checkbox"
+                  checked={bypassSmartCategorization}
+                  onChange={(e) => setBypassSmartCategorization(e.target.checked)}
+                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Only categorize this transaction
+                  </span>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Skip pattern matching for similar transactions. Use this for vague descriptions 
+                    that should not be used to categorize other transactions.
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            {/* Warning for vague descriptions */}
+            {showVagueWarning && (
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                <div className="flex items-start">
+                  <AlertTriangle className="h-5 w-5 text-yellow-400 mt-0.5 mr-2 flex-shrink-0" />
+                  <div className="text-sm text-yellow-700">
+                    This description seems vague. Consider checking the box above to avoid incorrectly categorizing unrelated transactions.
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Category Selection */}
             <div>
               <div className="flex justify-between items-center mb-3">
@@ -263,7 +324,7 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
                       placeholder="Category name"
                       value={newCategoryName}
                       onChange={(e) => setNewCategoryName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                     />
                     
                     <div>
@@ -274,7 +335,7 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
                             key={color}
                             onClick={() => setNewCategoryColor(color)}
                             className={`w-6 h-6 rounded-full border-2 ${
-                              newCategoryColor === color ? 'border-gray-800' : 'border-gray-300'
+                              newCategoryColor === color ? 'border-gray-800 dark:border-gray-200' : 'border-gray-300 dark:border-gray-600'
                             }`}
                             style={{ backgroundColor: color }}
                           />
@@ -286,13 +347,13 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
                       <button
                         onClick={handleCreateCategory}
                         disabled={!newCategoryName.trim() || loading}
-                        className="px-3 py-1 bg-blue-600 dark:bg-blue-400 hover:bg-blue-700 dark:hover:bg-blue-600 text-white text-sm rounded-md disabled:opacity-50"
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md disabled:opacity-50"
                       >
                         Create
                       </button>
                       <button
                         onClick={() => setShowCreateCategory(false)}
-                        className="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-400"
+                        className="px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-md hover:bg-gray-400 dark:hover:bg-gray-500"
                       >
                         Cancel
                       </button>
@@ -330,17 +391,17 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-between pt-4 border-t dark:border-none">
+            <div className="flex justify-between pt-4 border-t dark:border-gray-700">
               <button
                 onClick={handleSkip}
-                className="px-4 py-2 text-gray-600 dark:text-white bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-yellow-600 dark:hover:bg-yellow-700"
+                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md"
                 disabled={categorizing}
               >
                 Skip This Transaction
               </button>
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-red-700 dark:hover:bg-red-800 dark:text-white"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md"
               >
                 Close
               </button>

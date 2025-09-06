@@ -60,12 +60,12 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
   return (
     <div className={`animate-slide-in max-w-sm w-full shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 border ${getBgColor()}`}>
       <div className="p-4 flex items-center justify-between">
-        <p className="text-sm font-medium text-gray-900 dark:text-white">{toast.message}</p>
+        <p className="text-sm font-medium text-green-900 ">{toast.message}</p>
         <button
           className="ml-3 bg-white dark:bg-gray-800 rounded-md inline-flex text-gray-400 hover:text-gray-500 dark:text-gray-400 focus:outline-none"
           onClick={() => onRemove(toast.id)}
         >
-          <X className="h-5 w-5" />
+          <X className="h-5 w-5 text-green-900 bg-green-50 hover:text-black" />
         </button>
       </div>
     </div>
