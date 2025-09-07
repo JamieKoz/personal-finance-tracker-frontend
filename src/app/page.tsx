@@ -257,10 +257,11 @@ function UnauthenticatedLanding() {
               <DarkModeToggle />
               <button
                 onClick={() => openAuthModal('login')}
-                className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-              >
-                <LogIn className="text-xs h-4 w-full mr-2" />
-                Sign In
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors">
+                <div className="flex items-center">
+                  <LogIn className="h-4 w-4 mr-2 " />
+                  <span className="text-sm whitespace-nowrap">Sign In</span>
+                </div>
               </button>
             </div>
           </div>
