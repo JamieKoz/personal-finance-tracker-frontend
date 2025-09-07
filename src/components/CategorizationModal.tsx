@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Tag, ChevronLeft, ChevronRight, Plus, AlertTriangle } from 'lucide-react';
 import { apiService } from '@/lib/api';
 import { Transaction } from '@/types/Transactions/transaction';
@@ -18,7 +18,8 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
   const [categorizing, setCategorizing] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
   const [bypassSmartCategorization, setBypassSmartCategorization] = useState(false);
-  const { showToast } = useToast(); 
+  const { showToast: unstableShowToast } = useToast();
+  const showToast = useCallback(unstableShowToast, [unstableShowToast]);
   
   // New category form
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -31,56 +32,37 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
     '#EC4899', '#F43F5E', '#6B7280'
   ];
 
-  useEffect(() => {
-    if (!isOpen) return;
-    
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Fetch all uncategorized transactions
-        const allTransactions = await fetchAllUncategorizedTransactions();
-        setUncategorizedTransactions(allTransactions);
-        
-        // Fetch categories
-        const categoriesData = await apiService.getCategories();
-        setCategories(categoriesData);
-        
-        setCurrentIndex(0);
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-        showToast('Failed to load data', 'error');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, [isOpen, showToast]);
-
-  useEffect(() => {
-    // Reset bypass option when changing transactions
-    setBypassSmartCategorization(false);
-  }, [currentIndex]);
-
+useEffect(() => {
+  if (!isOpen) return;
+  
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch all uncategorized transactions
       const allTransactions = await fetchAllUncategorizedTransactions();
       setUncategorizedTransactions(allTransactions);
       
-      // Fetch categories
       const categoriesData = await apiService.getCategories();
       setCategories(categoriesData);
       
       setCurrentIndex(0);
     } catch (error) {
       console.error('Failed to fetch data:', error);
+      // Move showToast inside the effect, don't put it in dependencies
       showToast('Failed to load data', 'error');
     } finally {
       setLoading(false);
     }
   };
+  
+  fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [isOpen]); // Remove showToast from dependencies
+
+  useEffect(() => {
+    // Reset bypass option when changing transactions
+    setBypassSmartCategorization(false);
+  }, [currentIndex]);
+
 
   // Fetch all uncategorized transactions across all pages
   const fetchAllUncategorizedTransactions = async (): Promise<Transaction[]> => {
@@ -112,51 +94,72 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
     return allTransactions;
   };
 
-  const handleCategorizeTransaction = async (categoryId: number, categoryName: string) => {
-    const currentTransaction = uncategorizedTransactions[currentIndex];
-    if (!currentTransaction) return;
 
-    setCategorizing(true);
-    try {
-      let response;
-      
-      if (bypassSmartCategorization) {
-        // Just update this single transaction
-        await apiService.updateTransactionCategory(currentTransaction.id, categoryId);
-        response = {
-          updatedCount: 1,
-          businessName: 'N/A - Single transaction',
-          message: `Categorized 1 transaction as "${categoryName}"`
-        };
-      } else {
-        // Use pattern matching for similar transactions
-        response = await apiService.categorizeWithPattern({
-          transactionId: currentTransaction.id,
-          categoryId: categoryId
-        });
-      }
-
-      showToast(
-        bypassSmartCategorization 
-          ? `Categorized 1 transaction as "${categoryName}"`
-          : `Categorized ${response.updatedCount} transactions as "${categoryName}" using pattern "${response.businessName}"`,
-        'success',
-        5000
-      );
-
-      await fetchData();
-
-      if (uncategorizedTransactions.length <= 1) {
-        onSuccess();
-        onClose();
-      }
-    } catch (error) {
-      console.error('Failed to categorize transaction:', error);
-      showToast('Failed to categorize transaction', 'error');
-    } finally {
-      setCategorizing(false);
+const handleCategorizeTransaction = async (categoryId: number, categoryName: string) => {
+  const currentTransaction = uncategorizedTransactions[currentIndex];
+  if (!currentTransaction) return;
+  const currentTxId = currentTransaction.id;
+  
+  setCategorizing(true);
+  try {
+    let response;
+    
+    if (bypassSmartCategorization) {
+      await apiService.updateTransactionCategory(currentTransaction.id, categoryId);
+      response = {
+        updatedCount: 1,
+        businessName: 'N/A - Single transaction',
+        message: `Categorized 1 transaction as "${categoryName}"`
+      };
+    } else {
+      response = await apiService.categorizeWithPattern({
+        transactionId: currentTransaction.id,
+        categoryId: categoryId
+      });
     }
-  };
+
+    showToast(
+      bypassSmartCategorization 
+        ? `Categorized 1 transaction as "${categoryName}"`
+        : `Categorized ${response.updatedCount} transactions as "${categoryName}" using pattern "${response.businessName}"`,
+      'success',
+      5000
+    );
+
+    // Refetch data
+    const allTransactions = await fetchAllUncategorizedTransactions();
+    setUncategorizedTransactions(allTransactions);
+    
+    // Smart index adjustment
+    if (allTransactions.length === 0) {
+      onSuccess();
+      onClose();
+      return;
+    }
+    
+    // Check if the current transaction still exists (shouldn't if categorized properly)
+    const currentTxStillExists = allTransactions.some(tx => tx.id === currentTxId);
+    
+    if (currentTxStillExists) {
+      // Something went wrong - the transaction should have been categorized
+      console.warn('Transaction still exists after categorization');
+      // Find its new position
+      const newIndex = allTransactions.findIndex(tx => tx.id === currentTxId);
+      setCurrentIndex(newIndex >= 0 ? newIndex : Math.min(currentIndex, allTransactions.length - 1));
+    } else {
+      // Transaction was successfully categorized and removed
+      // Stay at the same index to show the next transaction, but ensure it's valid
+      const newIndex = Math.min(currentIndex, allTransactions.length - 1);
+      setCurrentIndex(newIndex);
+    }
+
+  } catch (error) {
+    console.error('Failed to categorize transaction:', error);
+    showToast('Failed to categorize transaction', 'error');
+  } finally {
+    setCategorizing(false);
+  }
+};
 
   const handleCreateCategory = async () => {
     if (!newCategoryName.trim()) return;
@@ -344,7 +347,7 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
                       placeholder="Category name"
                       value={newCategoryName}
                       onChange={(e) => setNewCategoryName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-gray-500"
                     />
                     
                     <div>

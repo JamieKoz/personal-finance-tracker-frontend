@@ -259,7 +259,7 @@ function UnauthenticatedLanding() {
                 onClick={() => openAuthModal('login')}
                 className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
               >
-                <LogIn className="h-4 w-4 mr-2" />
+                <LogIn className="text-xs h-4 w-full mr-2" />
                 Sign In
               </button>
             </div>
