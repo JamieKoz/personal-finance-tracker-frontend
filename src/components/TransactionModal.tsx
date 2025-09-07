@@ -29,7 +29,7 @@ export default function TransactionModal({ transaction, isOpen, onClose, onTrans
       const currentCategory = categories.find(cat => cat.name === transaction.category);
       setSelectedCategoryId(currentCategory?.id || null);
     }
-  }, [isOpen, transaction]);
+  }, [isOpen, transaction, categories]);
 
   useEffect(() => {
     if (transaction && categories.length > 0) {

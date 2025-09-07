@@ -37,11 +37,10 @@ function AuthenticatedDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [uncategorizedCount, setUncategorizedCount] = useState<number>(0);
 
-  const fetchTransactions = useCallback(async (page: number = 1, newFilters?: TransactionFilters) => {
+  const fetchTransactions = useCallback(async (page: number = 1, filtersToUse: TransactionFilters) => {
     setLoading(true);
     setError(null);
     try {
-      const filtersToUse = newFilters || filters;
       const response = await apiService.getTransactions(page, 50, filtersToUse);
       setTransactions(response.data || []);
       setPagination(response.pagination);
@@ -55,7 +54,7 @@ function AuthenticatedDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, []);
 
   const fetchSummary = async () => {
     setSummaryLoading(true);
@@ -72,22 +71,22 @@ function AuthenticatedDashboard() {
   };
 
   useEffect(() => {
-    fetchTransactions(1);
+    fetchTransactions(1, filters);
     fetchSummary();
-  }, []);
+  }, [fetchTransactions, filters]);
 
   const handleUploadSuccess = () => {
-    fetchTransactions(1);
+    fetchTransactions(1, filters);
     fetchSummary();
   };
 
   const handleFiltersChange = useCallback((newFilters: TransactionFilters) => {
     setFilters(newFilters);
     fetchTransactions(1, newFilters);
-  }, []);
+  }, [fetchTransactions]);
 
   const handlePageChange = (page: number) => {
-    fetchTransactions(page);
+    fetchTransactions(page, filters);
   };
 
   const handleTransactionClick = (transaction: Transaction) => {
@@ -96,7 +95,7 @@ function AuthenticatedDashboard() {
   };
 
   const handleCategorizationSuccess = () => {
-    fetchTransactions(currentPage);
+    fetchTransactions(currentPage, filters);
     fetchSummary();
   };
 
@@ -106,7 +105,7 @@ function AuthenticatedDashboard() {
   };
 
   const retryFetch = () => {
-    fetchTransactions(currentPage);
+    fetchTransactions(currentPage, filters);
     fetchSummary();
   };
 
@@ -184,7 +183,7 @@ function AuthenticatedDashboard() {
 
         {/* Charts Section */}
         {summary && !summaryLoading && (
-          <FinancialCharts summary={summary} />
+          <FinancialCharts />
         )}
 
         {/* Loading State for Summary */}
@@ -220,7 +219,7 @@ function AuthenticatedDashboard() {
         isOpen={showModal}
         onClose={handleCloseModal}
         onTransactionUpdated={() => {
-          fetchTransactions(currentPage);
+          fetchTransactions(currentPage, filters);
           fetchSummary();
         }}
       />

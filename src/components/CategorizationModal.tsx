@@ -32,10 +32,30 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
   ];
 
   useEffect(() => {
-    if (isOpen) {
-      fetchData();
-    }
-  }, [isOpen]);
+    if (!isOpen) return;
+    
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch all uncategorized transactions
+        const allTransactions = await fetchAllUncategorizedTransactions();
+        setUncategorizedTransactions(allTransactions);
+        
+        // Fetch categories
+        const categoriesData = await apiService.getCategories();
+        setCategories(categoriesData);
+        
+        setCurrentIndex(0);
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+        showToast('Failed to load data', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [isOpen, showToast]);
 
   useEffect(() => {
     // Reset bypass option when changing transactions

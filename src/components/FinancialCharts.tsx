@@ -1,24 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, ComposedChart, Area, AreaChart } from 'recharts';
-import { Calendar, TrendingUp, PieChart as PieChartIcon, BarChart as BarChartIcon, Filter, X, Wallet, TrendingDown, DollarSign, Target } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Line, Legend, ComposedChart } from 'recharts';
+import { PieChart as PieChartIcon, BarChart as BarChartIcon, Filter, X, Wallet, TrendingDown, DollarSign, Target } from 'lucide-react';
 import { apiService } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Transaction } from '@/types/Transactions/transaction';
 import { Category } from '@/types/Categories/category';
-import { TransactionSummary } from '@/types/Transactions/transactionSummary';
-import { ChartsProps } from '@/interfaces/Props/chartsProps';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 
-export default function FinancialCharts({ summary }: ChartsProps) {
+export default function FinancialCharts() {
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeChart, setActiveChart] = useState('savings');
   const [excludeInternalTransfers, setExcludeInternalTransfers] = useState(false);
-  const [summaryWithTransfers, setSummaryWithTransfers] = useState<TransactionSummary | null>(null);
   
   // Filter states
   const [dateFrom, setDateFrom] = useState('');
@@ -29,21 +26,6 @@ export default function FinancialCharts({ summary }: ChartsProps) {
   useEffect(() => {
     fetchData();
   }, []);
-
-  useEffect(() => {
-    if (excludeInternalTransfers) {
-      fetchSummaryWithoutTransfers();
-    }
-  }, [excludeInternalTransfers]);
-
-  const fetchSummaryWithoutTransfers = async () => {
-    try {
-      const summaryData = await apiService.getTransactionSummary(true); // exclude internal transfers
-      setSummaryWithTransfers(summaryData);
-    } catch (error) {
-      console.error('Failed to fetch summary without transfers:', error);
-    }
-  };
 
   const fetchData = async () => {
     setLoading(true);

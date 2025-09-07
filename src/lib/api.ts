@@ -5,6 +5,9 @@ import { CreateCategoryRequest } from '@/types/Requests/createCategoryRequest';
 import { Category } from '@/types/Categories/category';
 import { TransactionFilters } from '@/types/Transactions/transactionFilters';
 import { TransactionSummary } from '@/types/Transactions/transactionSummary';
+import { CategorizeResponse } from '@/types/Responses/CategorizeResponse';
+import { UploadResponse } from '@/types/Responses/UploadResponse';
+import { UpdateCategoryResponse } from '@/types/Responses/UpdateCategoryResponse';
 
 const API_BASE = 'http://127.0.0.1:8000'; // Update to match your .NET API port
 
@@ -50,7 +53,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 }
 
 export const apiService = {
-  async uploadCSV(file: File): Promise<any> {
+  async uploadCSV(file: File): Promise<UploadResponse> {
     const token = localStorage.getItem('auth_token');
     const formData = new FormData();
     formData.append("file", file);
@@ -63,7 +66,7 @@ export const apiService = {
       body: formData,
     });
 
-    return handleResponse<any>(response);
+    return handleResponse<UploadResponse>(response);
   },
 
   async getTransactions(
@@ -166,7 +169,7 @@ export const apiService = {
     }
   },
 
-  async categorizeTransactions(request: CategorizeRequest): Promise<any> {
+  async categorizeTransactions(request: CategorizeRequest): Promise<CategorizeResponse> {
     try {
       const response = await fetch(`${API_BASE}/api/Category/categorize`, {
         method: 'POST',
@@ -174,14 +177,14 @@ export const apiService = {
         body: JSON.stringify(request),
       });
       
-      return await handleResponse<any>(response);
+      return await handleResponse<CategorizeResponse>(response);
     } catch (error) {
       console.error('Categorize transactions error:', error);
       throw new Error(`Failed to categorize transactions: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   },
 
-  async categorizeWithPattern(request: { transactionId: number; categoryId: number }): Promise<any> {
+  async categorizeWithPattern(request: { transactionId: number; categoryId: number }): Promise<CategorizeResponse> {
     try {
       const response = await fetch(`${API_BASE}/api/Category/categorize-with-pattern`, {
         method: 'POST',
@@ -189,14 +192,14 @@ export const apiService = {
         body: JSON.stringify(request),
       });
       
-      return await handleResponse<any>(response);
+      return await handleResponse<CategorizeResponse>(response);
     } catch (error) {
       console.error('Categorize with pattern error:', error);
       throw new Error(`Failed to categorize with pattern: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   },
 
-  async updateTransactionCategory(transactionId: number, categoryId: number): Promise<any> {
+  async updateTransactionCategory(transactionId: number, categoryId: number): Promise<UpdateCategoryResponse> {
     try {
       const response = await fetch(`${API_BASE}/api/Transaction/${transactionId}/category`, {
         method: 'PUT',
@@ -204,7 +207,7 @@ export const apiService = {
         body: JSON.stringify({ categoryId }),
       });
       
-      return await handleResponse<any>(response);
+      return await handleResponse<UpdateCategoryResponse>(response);
     } catch (error) {
       console.error('Update transaction category error:', error);
       throw new Error(`Failed to update transaction category: ${error instanceof Error ? error.message : 'Unknown error'}`);
