@@ -236,6 +236,12 @@ function AuthenticatedDashboard() {
 
 function UnauthenticatedLanding() {
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+
+  const openAuthModal = (mode: 'login' | 'register') => {
+    setAuthMode(mode);
+    setShowAuthModal(true);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
@@ -250,7 +256,7 @@ function UnauthenticatedLanding() {
             <div className="flex items-center space-x-4">
               <DarkModeToggle />
               <button
-                onClick={() => setShowAuthModal(true)}
+                onClick={() => openAuthModal('login')}
                 className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
               >
                 <LogIn className="h-4 w-4 mr-2" />
@@ -277,13 +283,13 @@ function UnauthenticatedLanding() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <button
-              onClick={() => setShowAuthModal(true)}
+              onClick={() => openAuthModal('register')}
               className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors text-lg"
             >
               Get Started Free
             </button>
             <button
-              onClick={() => setShowAuthModal(true)}
+              onClick={() => openAuthModal('login')}
               className="px-8 py-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold rounded-lg transition-colors text-lg"
             >
               Sign In
@@ -325,7 +331,11 @@ function UnauthenticatedLanding() {
         </div>
       </main>
 
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+        defaultMode={authMode}
+      />
     </div>
   );
 }
