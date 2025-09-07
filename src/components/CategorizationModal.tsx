@@ -126,10 +126,14 @@ const handleCategorizeTransaction = async (categoryId: number, categoryName: str
       5000
     );
 
-    // Refetch data
-    const allTransactions = await fetchAllUncategorizedTransactions();
+    const [allTransactions, updatedCategories] = await Promise.all([
+      fetchAllUncategorizedTransactions(),
+      apiService.getCategories()
+    ]);
+
     setUncategorizedTransactions(allTransactions);
-    
+    setCategories(updatedCategories);
+      //
     // Smart index adjustment
     if (allTransactions.length === 0) {
       onSuccess();
