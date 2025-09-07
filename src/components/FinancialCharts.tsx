@@ -365,7 +365,7 @@ export default function FinancialCharts({ summary }: ChartsProps) {
                     className={`flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                       excludedCategories.includes(category.name)
                         ? 'bg-red-100 text-red-800 border border-red-300'
-                        : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
+                        : 'bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-900 dark:text-white text-gray-700 border border-gray-300 hover:bg-gray-200'
                     }`}
                   >
                     <div
