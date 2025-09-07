@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, AuthResponse, LoginRequest, RegisterRequest } from '@/types/Auth/authTypes';
+import { User, AuthResponse, LoginRequest, RegisterRequest, ForgotPasswordRequest, ResetPasswordRequest } from '@/types/Auth/authTypes';
 
 interface AuthContextType {
   user: User | null;
@@ -9,6 +9,8 @@ interface AuthContextType {
   login: (credentials: LoginRequest) => Promise<void>;
   register: (userData: RegisterRequest) => Promise<void>;
   logout: () => void;
+  forgotPassword: (request: ForgotPasswordRequest) => Promise<void>;
+  resetPassword: (request: ResetPasswordRequest) => Promise<void>; 
   isLoading: boolean;
   isAuthenticated: boolean;
 }
@@ -105,6 +107,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('auth_user');
   };
 
+  const forgotPassword = async (request: ForgotPasswordRequest) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to send password reset email');
+      }
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      throw error;
+    }
+  };
+
+  const resetPassword = async (request: ResetPasswordRequest) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to reset password');
+      }
+    } catch (error) {
+      console.error('Reset password error:', error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -112,6 +154,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       register,
       logout,
+      forgotPassword,
+      resetPassword,
       isLoading,
       isAuthenticated,
     }}>

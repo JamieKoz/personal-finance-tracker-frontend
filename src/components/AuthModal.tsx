@@ -15,8 +15,9 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  const { login, register } = useAuth();
+  const [success, setSuccess] = useState<string | null>(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false); 
+  const { login, register, forgotPassword } = useAuth();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -39,7 +40,11 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
     setError(null);
 
     try {
-      if (isLogin) {
+      if(showForgotPassword){
+       await forgotPassword({ email: formData.email });
+        setSuccess('If an account with that email exists, we\'ve sent a password reset link.');
+        setShowForgotPassword(false);
+      } else if (isLogin) {
         await login({
           email: formData.email,
           password: formData.password,
@@ -71,15 +76,31 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
     }));
   };
 
+  const resetForm = () => {
+    setFormData({
+      email: '',
+      password: '',
+      confirmPassword: '',
+      firstName: '',
+      lastName: '',
+    });
+    setError(null);
+    setSuccess(null);
+    setShowForgotPassword(false);
+  };
+
   return (
     <div className="fixed inset-0 bg-gray-900/70 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-8 w-full max-w-md mx-4">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {isLogin ? 'Sign In' : 'Create Account'}
+           {showForgotPassword ? 'Reset Password' : (isLogin ? 'Sign In' : 'Create Account')}
           </h2>
           <button
-            onClick={onClose}
+            onClick={() => {
+              onClose();
+              resetForm();
+            }}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
           >
             <X className="h-6 w-6" />
@@ -92,8 +113,14 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
           </div>
         )}
 
+        {success && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-sm text-green-600">{success}</p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
+          {!isLogin && !showForgotPassword && (
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -148,49 +175,53 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Password
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                required
-                className="pl-10 pr-10 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-black"
-                placeholder="Password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
-            </div>
-          </div>
-
-          {!isLogin && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  required={!isLogin}
-                  className="pl-10 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-black"
-                  placeholder="Confirm password"
-                />
+          {!showForgotPassword && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required
+                    className="pl-10 pr-10 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-gray-700"
+                    placeholder="Password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
-            </div>
+
+              {!isLogin && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      required
+                      className="pl-10 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      placeholder="Confirm password"
+                    />
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           <button
@@ -198,17 +229,49 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
             disabled={isLoading}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
           >
-            {isLoading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
+            {isLoading ? 'Please wait...' : (
+              showForgotPassword ? 'Send Reset Link' :
+              isLogin ? 'Sign In' : 'Create Account'
+            )}
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-blue-600 hover:text-blue-700 text-sm"
-          >
-            {isLogin ? "Don't have an account?" : 'Already have an account?'}
-          </button>
+        <div className="mt-6 text-center space-y-2">
+          {!showForgotPassword && (
+            <>
+              {isLogin && (
+                <button
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-blue-600 hover:text-blue-700 text-sm dark:text-blue-500 hover:text-blue-600"
+                >
+                  Forgot your password?
+                </button>
+              )}
+              <div>
+                <button
+                  onClick={() => {
+                    setIsLogin(!isLogin);
+                    resetForm();
+                  }}
+                  className="text-blue-600 hover:text-blue-700 text-sm dark:text-blue-500 hover:text-blue-600"
+                >
+                  {isLogin ? "Sign up" : 'Already have an account? Sign in'}
+                </button>
+              </div>
+            </>
+          )}
+          
+          {showForgotPassword && (
+            <button
+              onClick={() => {
+                setShowForgotPassword(false);
+                resetForm();
+              }}
+              className="text-blue-600 hover:text-blue-700 text-sm dark:text-blue-500 hover:text-blue-600"
+            >
+              Back to sign in
+            </button>
+          )}
         </div>
       </div>
     </div>
