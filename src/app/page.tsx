@@ -221,6 +221,7 @@ function AuthenticatedDashboard() {
         onTransactionUpdated={() => {
           fetchTransactions(currentPage, filters);
           fetchSummary();
+          handleCloseModal();
         }}
       />
 

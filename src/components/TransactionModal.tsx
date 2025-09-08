@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Transaction } from '@/types/Transactions/transaction';
 import { Category } from '@/types/Categories/category';
@@ -21,22 +21,29 @@ export default function TransactionModal({ transaction, isOpen, onClose, onTrans
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [updating, setUpdating] = useState(false);
   const { showToast } = useToast();
+  const hasInitializedCategory = useRef(false);
 
   useEffect(() => {
     if (isOpen && transaction) {
       fetchCategories();
-      // Find the current category ID
-      const currentCategory = categories.find(cat => cat.name === transaction.category);
-      setSelectedCategoryId(currentCategory?.id || null);
+      hasInitializedCategory.current = false;
     }
-  }, [isOpen, transaction, categories]);
+  }, [isOpen, transaction]);
 
   useEffect(() => {
-    if (transaction && categories.length > 0) {
+    if (transaction && categories.length > 0 && !hasInitializedCategory.current) {
       const currentCategory = categories.find(cat => cat.name === transaction.category);
       setSelectedCategoryId(currentCategory?.id || null);
+      hasInitializedCategory.current = true;
     }
   }, [transaction, categories]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsEditing(false);
+      hasInitializedCategory.current = false;
+    }
+  }, [isOpen]);
 
   const fetchCategories = async () => {
     try {
