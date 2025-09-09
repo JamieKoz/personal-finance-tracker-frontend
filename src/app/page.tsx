@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { PieChart, AlertCircle, Tag, LogIn } from 'lucide-react';
+import { PieChart, AlertCircle, Tag, LogIn, Menu, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiService } from '@/lib/api';
 import { Transaction } from '@/types/Transactions/transaction';
@@ -36,6 +36,7 @@ function AuthenticatedDashboard() {
   const [showCategorizationModal, setShowCategorizationModal] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [uncategorizedCount, setUncategorizedCount] = useState<number>(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   const fetchTransactions = useCallback(async (page: number = 1, filtersToUse: TransactionFilters) => {
     setLoading(true);
@@ -116,50 +117,100 @@ function AuthenticatedDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo and Title */}
-            <div className="flex items-center">
-              <PieChart className="h-8 w-8 text-blue-600 mr-3" />
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Personal Finance Tracker</h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Track your financial activity</p>
+            <div className="flex items-center min-w-0 flex-1">
+              <PieChart className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mr-2 sm:mr-3 flex-shrink-0" />
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white truncate">
+                  <span className="hidden sm:inline">Personal Finance Tracker</span>
+                  <span className="sm:hidden">Finance Tracker</span>
+                </h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">Track your financial activity</p>
               </div>
             </div>
 
-            {/* Upload and Actions Section */}
-            <div className="flex items-center space-x-4">
+            {/* Desktop Actions */}
+            <div className="hidden md:flex items-center space-x-3">
               <DarkModeToggle />
               {uncategorizedCount > 0 && (
                 <button
                   onClick={() => setShowCategorizationModal(true)}
-                  className="flex items-center px-3 py-2 bg-orange-100 text-orange-800 text-sm rounded-md hover:bg-orange-200 transition-colors"
+                  className="flex items-center px-3 py-2 bg-orange-100 text-orange-800 text-sm rounded-md hover:bg-orange-200 transition-colors whitespace-nowrap"
                 >
                   <Tag className="h-4 w-4 mr-2" />
-                  Uncategorized Transactions ({uncategorizedCount})
+                  Uncategorized ({uncategorizedCount})
                 </button>
               )}
-              
-              {/* Compact File Upload */}
               <FileUpload 
                 onUploadSuccess={handleUploadSuccess} 
                 isUploading={isUploading}
                 setIsUploading={setIsUploading}
                 compact={true}
               />
-
-              {/* User Menu */}
               <UserMenu />
             </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden flex items-center space-x-2">
+              {uncategorizedCount > 0 && (
+                <button
+                  onClick={() => setShowCategorizationModal(true)}
+                  className="p-2 bg-orange-100 text-orange-800 rounded-md hover:bg-orange-200 transition-colors lg:block hidden"
+                  title={`${uncategorizedCount} uncategorized transactions`}
+                >
+                  <Tag className="h-4 w-4" />
+                </button>
+              )}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+            </div>
+            <div className="md:hidden">
+              <UserMenu />
           </div>
+          </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t border-gray-200 dark:border-gray-700 py-4">
+              <div className="flex flex-col space-y-4">
+                <div className="flex justify-between items-center">
+                  <DarkModeToggle />
+                </div>
+                <FileUpload 
+                  onUploadSuccess={handleUploadSuccess} 
+                  isUploading={isUploading}
+                  setIsUploading={setIsUploading}
+                  compact={true}
+                />
+                {uncategorizedCount > 0 && (
+                  <button
+                    onClick={() => {
+                      setShowCategorizationModal(true);
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center px-3 py-2 bg-orange-100 text-orange-800 text-sm rounded-md hover:bg-orange-200 transition-colors"
+                  >
+                    <Tag className="h-4 w-4 mr-2" />
+                    Uncategorized Transactions ({uncategorizedCount})
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
       {/* Main Dashboard Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
             <div className="flex items-start">
               <AlertCircle className="h-5 w-5 text-red-400 mt-0.5 mr-3 flex-shrink-0" />
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="text-sm text-red-600">{error}</p>
                 <button
                   onClick={retryFetch}
@@ -238,10 +289,12 @@ function AuthenticatedDashboard() {
 function UnauthenticatedLanding() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const openAuthModal = (mode: 'login' | 'register') => {
     setAuthMode(mode);
     setShowAuthModal(true);
+    setMobileMenuOpen(false);
   };
 
   return (
@@ -250,56 +303,91 @@ function UnauthenticatedLanding() {
       <nav className="bg-white dark:bg-gray-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <PieChart className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Personal Finance Tracker</h1>
+            <div className="flex items-center min-w-0 flex-1">
+              <PieChart className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mr-2 sm:mr-3 flex-shrink-0" />
+              <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white truncate">
+                <span className="hidden sm:inline">Personal Finance Tracker</span>
+                <span className="sm:hidden">Finance Tracker</span>
+              </h1>
             </div>
-            <div className="flex items-center space-x-4">
+            
+            {/* Desktop Actions */}
+            <div className="hidden sm:flex items-center space-x-4">
               <DarkModeToggle />
               <button
                 onClick={() => openAuthModal('login')}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors">
                 <div className="flex items-center">
-                  <LogIn className="h-4 w-4 mr-2 " />
+                  <LogIn className="h-4 w-4 mr-2" />
                   <span className="text-sm whitespace-nowrap">Sign In</span>
                 </div>
               </button>
             </div>
+
+            {/* Mobile Menu Button */}
+            <div className="sm:hidden flex items-center">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+            </div>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="sm:hidden border-t border-gray-200 dark:border-gray-700 py-4">
+              <div className="flex flex-col space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Theme</span>
+                  <DarkModeToggle />
+                </div>
+                <button
+                  onClick={() => openAuthModal('login')}
+                  className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors text-left">
+                  <div className="flex items-center">
+                    <LogIn className="h-4 w-4 mr-2" />
+                    <span className="text-sm">Sign In</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
       {/* Hero Section */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
         <div className="text-center">
           <div className="mb-8">
-            <PieChart className="h-24 w-24 text-blue-600 mx-auto mb-6" />
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+            <PieChart className="h-16 w-16 sm:h-24 sm:w-24 text-blue-600 mx-auto mb-6" />
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
               Take Control of Your
               <span className="text-blue-600 block">Financial Future</span>
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto px-4">
               Upload your bank transactions, categorize your spending, and gain valuable insights into your financial habits with our powerful analytics dashboard.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16 px-4">
             <button
               onClick={() => openAuthModal('register')}
-              className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors text-lg"
+              className="px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors text-base sm:text-lg"
             >
               Get Started Free
             </button>
             <button
               onClick={() => openAuthModal('login')}
-              className="px-8 py-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold rounded-lg transition-colors text-lg"
+              className="px-6 sm:px-8 py-3 sm:py-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold rounded-lg transition-colors text-base sm:text-lg"
             >
               Sign In
             </button>
           </div>
 
           {/* Features */}
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto px-4">
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
               <div className="h-12 w-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <PieChart className="h-6 w-6 text-blue-600" />
@@ -320,7 +408,7 @@ function UnauthenticatedLanding() {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md sm:col-span-2 md:col-span-1">
               <div className="h-12 w-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <AlertCircle className="h-6 w-6 text-purple-600" />
               </div>
