@@ -16,21 +16,73 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# Personal Finance Tracker Frontend
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+<img width="2863" height="2498" alt="image" src="https://github.com/user-attachments/assets/f0c60ff1-c3f7-4a7a-98de-eebf2699f341" />
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+A React Next JS app working with a .NET 8 Web API for importing and analyzing personal bank transaction data. Upload CSV files, automatically categorize transactions, and get financial insights.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Features
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **CSV Import**: Bulk import bank transactions with automatic duplicate detection
+- **Smart Categorization**: Automatically categorize transactions based on merchant patterns
+- **Financial Analytics**: Track spending, income, and savings rates
+- **Transaction Management**: Search, filter, and manage transactions with pagination
+- **Category Management**: Create custom categories and bulk categorization tools
 
-## Deploy on Vercel
+## CSV Format
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Your bank CSV should have these columns:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```csv
+Date,Description,Credit,Debit,Balance
+01/01/2024,"ACME STORE - Purchase",0,25.50,1234.56
+02/01/2024,"Salary Payment",2500.00,0,3734.06
+```
+
+Supports various date formats (dd/MM/yyyy, d/M/yyyy, etc.).
+
+## Key Functionality
+
+**Duplicate Detection**: Uses transaction hash (date + description + amount) to prevent duplicate imports.
+
+**Pattern Recognition**: Extracts business names from transaction descriptions for intelligent categorization.
+
+```
+"ACME STORE - Receipt 123" → "ACME STORE"
+"McDONALD'S 456 AUTH:789" → "McDONALD'S"
+```
+
+**Financial Analytics**:
+
+- Income vs expenses tracking
+- Savings rate calculations
+- Spending breakdown by category
+- Option to exclude internal transfers
+
+**Smart Categorization**: Select any transaction and automatically categorize all similar uncategorized transactions.
+
+## Demo Data
+
+The application comes with pre-configured categories:
+
+- Food & Dining, Groceries, Coffee
+- Transport, Petrol, Car
+- Bills & Utilities, Shopping
+- Income, Transfers, Fitness
+- Gifts, Rebates, Leisure
+
+## Frontend Integration
+
+API is configured with CORS for `http://localhost:3000` (React development server). 
+
+-----
+
+*A practical financial data management solution built with .NET 8*
+<img width="2863" height="1441" alt="image" src="https://github.com/user-attachments/assets/8fd2bbfd-af0a-406b-a3d3-aa7ac3164ab8" />
+
+<img width="2863" height="1479" alt="image" src="https://github.com/user-attachments/assets/0b74121d-9000-41d9-9662-e3da87639b72" />
+
+
+<img width="1460" height="2021" alt="image" src="https://github.com/user-attachments/assets/20effbb7-2903-4c40-872b-417c447eb483" />
