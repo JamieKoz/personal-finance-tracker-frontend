@@ -67,23 +67,13 @@ export default function FinancialCharts() {
 
   // Identify internal transfers client-side for filtering
   const isInternalTransfer = (transaction: Transaction): boolean => {
-    const desc = transaction.description?.toLowerCase() || '';
     const cat = transaction.category?.toLowerCase() || '';
     
-    const internalPatterns = [
-      'transfer', 'tfr', 'internal', 'credit card payment', 'cc payment',
-      'loan payment', 'mortgage payment', 'between accounts', 'account transfer',
-      'online transfer', 'mobile transfer', 'wire transfer', 'deposit to',
-      'withdrawal from', 'move money', 'savings transfer'
-    ];
-    
     const internalCategories = [
-      'transfers', 'internal transfer', 'loan payments', 
-      'credit card payments', 'account transfers'
+      'transfers', 'internal transfer'
     ];
     
-    return internalPatterns.some(pattern => desc.includes(pattern)) ||
-           internalCategories.some(pattern => cat.includes(pattern));
+    return internalCategories.some(pattern => cat.includes(pattern));
   };
 
   // Filter transactions based on date, category filters, and internal transfer toggle
