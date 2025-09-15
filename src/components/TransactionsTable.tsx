@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { FileText, Search, X, ChevronDown, Filter } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Transaction } from '@/types/Transactions/transaction';
+import { Category } from '@/types/Categories/category';
+import { apiService } from '@/lib/api';
 
 interface TransactionsTableProps {
   transactions: Transaction[];
@@ -31,8 +33,25 @@ export default function TransactionsTable({
   const [filterCategory, setFilterCategory] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [showMobileFilters, setShowMobileFilters] = useState<boolean>(false);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState<boolean>(true);
 
-  const categories = [...new Set(transactions.map(t => t.category).filter(Boolean))];
+  // Fetch all categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        const categories = await apiService.getCategories();
+        setAllCategories(categories);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -125,11 +144,16 @@ export default function TransactionsTable({
               <select
                 value={filterCategory}
                 onChange={handleCategoryChange}
-                className="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                disabled={categoriesLoading}
+                className="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="">All Categories</option>
-                {categories.map(category => (
-                  <option key={category} value={category}>{category}</option>
+                <option value="">
+                  {categoriesLoading ? 'Loading categories...' : 'All Categories'}
+                </option>
+                {allCategories.map(category => (
+                  <option key={category.id} value={category.name}>
+                    {category.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -184,11 +208,16 @@ export default function TransactionsTable({
                   <select
                     value={filterCategory}
                     onChange={handleCategoryChange}
-                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                    disabled={categoriesLoading}
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <option value="">All Categories</option>
-                    {categories.map(category => (
-                      <option key={category} value={category}>{category}</option>
+                    <option value="">
+                      {categoriesLoading ? 'Loading...' : 'All Categories'}
+                    </option>
+                    {allCategories.map(category => (
+                      <option key={category.id} value={category.name}>
+                        {category.name}
+                      </option>
                     ))}
                   </select>
                 </div>

@@ -284,7 +284,7 @@ export default function FinancialCharts() {
     return Array.from(categoryData.entries())
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
-      .slice(0, 8);
+      .slice(0, 12);
   };
 
   const clearFilters = () => {
@@ -674,39 +674,93 @@ export default function FinancialCharts() {
         </div>
       )}
 
-      {/* Category Chart */}
       {activeChart === 'categories' && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
             <PieChartIcon className="h-5 w-5 mr-2 text-blue-600" />
             Spending by Category
           </h3>
-          <div className="h-64 sm:h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => {
-                    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 640;
-                    return isMobile ? `${(percent ? (percent * 100).toFixed(0) : 0)}%` : `${name} (${percent ? (percent * 100).toFixed(0) : 0}%)`;
-                  }}
-                  outerRadius={typeof window !== 'undefined' && window.innerWidth > 640 ? 100 : 80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  formatter={(value: number) => [formatCurrency(value), 'Amount']}
-                  contentStyle={{ fontSize: '14px' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Pie Chart */}
+            <div className="flex-1">
+              <div className="h-64 sm:h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => {
+                        const isMobile = typeof window !== 'undefined' && window.innerWidth <= 640;
+                        return isMobile ? `${(percent ? (percent * 100).toFixed(0) : 0)}%` : `${name} (${percent ? (percent * 100).toFixed(0) : 0}%)`;
+                      }}
+                      outerRadius={typeof window !== 'undefined' && window.innerWidth > 640 ? 100 : 80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => [formatCurrency(value), 'Amount']}
+                      contentStyle={{ fontSize: '14px' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Legend */}
+            <div className="lg:w-80 lg:flex-shrink-0">
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Category Breakdown</h4>
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                {categoryData.map((category, index) => {
+                  const totalSpending = categoryData.reduce((sum, cat) => sum + cat.value, 0);
+                  const percentage = totalSpending > 0 ? (category.value / totalSpending) * 100 : 0;
+
+                  return (
+                    <div key={category.name} className="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <div className="flex items-center min-w-0 flex-1">
+                        <div
+                          className="w-3 h-3 rounded-full mr-3 flex-shrink-0"
+                          style={{ backgroundColor: colors[index % colors.length] }}
+                        />
+                        <span className="text-sm text-gray-900 dark:text-white truncate">
+                          {category.name}
+                        </span>
+                      </div>
+                      <div className="text-right ml-3 flex-shrink-0">
+                        <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {formatCurrency(category.value)}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {percentage.toFixed(1)}%
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Summary */}
+              <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Spending</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {formatCurrency(categoryData.reduce((sum, cat) => sum + cat.value, 0))}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mt-1">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Categories shown</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {categoryData.length}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
