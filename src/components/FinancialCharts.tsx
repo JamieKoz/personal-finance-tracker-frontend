@@ -15,7 +15,7 @@ export default function FinancialCharts() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeChart, setActiveChart] = useState('savings');
-  const [excludeInternalTransfers, setExcludeInternalTransfers] = useState(false);
+  const [excludeInternalTransfers, setExcludeInternalTransfers] = useState(true);
   
   // Filter states
   const [dateFrom, setDateFrom] = useState('');

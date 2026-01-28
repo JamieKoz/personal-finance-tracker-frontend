@@ -17,7 +17,7 @@ export default function TransactionCategorizer({ isOpen, onClose, onSuccess }: T
   const [loading, setLoading] = useState(false);
   const [categorizing, setCategorizing] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
-  const [bypassSmartCategorization, setBypassSmartCategorization] = useState(false);
+  const [bypassSmartCategorization, setBypassSmartCategorization] = useState(true);
   const { showToast: unstableShowToast } = useToast();
   const showToast = useCallback(unstableShowToast, [unstableShowToast]);
   
