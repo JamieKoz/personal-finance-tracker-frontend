@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Line, Legend, ComposedChart, Area, AreaChart } from 'recharts';
-import { PieChart as PieChartIcon, Filter, X, Wallet, TrendingDown, DollarSign, Target, ChevronDown, TrendingUp, Calendar, Activity } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Line, Legend, ComposedChart } from 'recharts';
+import { PieChart as PieChartIcon, Filter, X, Wallet, TrendingDown, DollarSign, Target, ChevronDown, TrendingUp, Calendar, Store } from 'lucide-react';
 import { apiService } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Transaction } from '@/types/Transactions/transaction';
@@ -14,7 +14,7 @@ export default function FinancialCharts() {
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeChart, setActiveChart] = useState('savings');
+  const [activeChart, setActiveChart] = useState('categories');
   const [excludeInternalTransfers, setExcludeInternalTransfers] = useState(true);
   
   // Filter states
@@ -154,102 +154,84 @@ export default function FinancialCharts() {
       .sort((a, b) => a.monthKey.localeCompare(b.monthKey));
   };
 
-  // Get cumulative wealth data
-  const getCumulativeWealthData = () => {
-    const filteredTransactions = getFilteredTransactions()
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
-    let cumulativeBalance = 0;
-    const dailyData = new Map<string, { date: string, balance: number, transactions: number }>();
-    
-    filteredTransactions.forEach(transaction => {
-      const dateKey = transaction.date.split('T')[0];
-      cumulativeBalance += transaction.credit;
-      
-      if (!dailyData.has(dateKey)) {
-        dailyData.set(dateKey, { 
-          date: dateKey, 
-          balance: cumulativeBalance, 
-          transactions: 0 
-        });
-      }
-      
-      const data = dailyData.get(dateKey)!;
-      data.balance = cumulativeBalance;
-      data.transactions++;
-    });
+  // Monthly spending trend with 3-month smoothing baseline
+  const getSpendingTrendData = () => {
+    const filtered = getFilteredTransactions();
+    const monthlyData = new Map<string, { month: string; spending: number; income: number }>();
 
-    // Group by month for better visualization
-    const monthlyBalances = new Map<string, { month: string, balance: number, avgDailyBalance: number }>();
-    
-    Array.from(dailyData.entries()).forEach(([dateKey, data]) => {
-      const date = new Date(dateKey);
+    filtered.forEach((transaction) => {
+      const date = new Date(transaction.date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const monthLabel = date.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' });
-      
-      if (!monthlyBalances.has(monthKey)) {
-        monthlyBalances.set(monthKey, { 
-          month: monthLabel, 
-          balance: data.balance,
-          avgDailyBalance: data.balance
-        });
+
+      if (!monthlyData.has(monthKey)) {
+        monthlyData.set(monthKey, { month: monthLabel, spending: 0, income: 0 });
+      }
+
+      const data = monthlyData.get(monthKey)!;
+      if (transaction.credit < 0) {
+        data.spending += Math.abs(transaction.credit);
       } else {
-        // Update to the last balance of the month
-        monthlyBalances.get(monthKey)!.balance = data.balance;
+        data.income += transaction.credit;
       }
     });
 
-    return Array.from(monthlyBalances.entries())
+    const monthlySeries = Array.from(monthlyData.entries())
       .map(([monthKey, data]) => ({ monthKey, ...data }))
-      .sort((a, b) => a.monthKey.localeCompare(b.monthKey));
+      .sort((a, b) => a.monthKey.localeCompare(b.monthKey))
+      .slice(-12);
+
+    return monthlySeries.map((row, index) => {
+      const window = monthlySeries.slice(Math.max(0, index - 2), index + 1);
+      const movingAvgSpending = window.reduce((sum, value) => sum + value.spending, 0) / Math.max(1, window.length);
+
+      return {
+        ...row,
+        movingAvgSpending,
+        net: row.income - row.spending,
+      };
+    });
   };
 
-  // Get spending patterns data
-  const getSpendingPatternsData = () => {
-    const filteredTransactions = getFilteredTransactions()
-      .filter(t => t.credit < 0); // Only expenses
-    
-    const weeklySpending = new Map<string, { week: string, weekday: number, weekend: number }>();
-    
-    filteredTransactions.forEach(transaction => {
-      const date = new Date(transaction.date);
-      const weekOfYear = getWeekNumber(date);
-      const year = date.getFullYear();
-      const weekKey = `${year}-W${weekOfYear}`;
-      
-      if (!weeklySpending.has(weekKey)) {
-        weeklySpending.set(weekKey, { 
-          week: `W${weekOfYear}`, 
-          weekday: 0, 
-          weekend: 0 
-        });
-      }
-      
-      const data = weeklySpending.get(weekKey)!;
-      const dayOfWeek = date.getDay();
-      
-      if (dayOfWeek === 0 || dayOfWeek === 6) {
-        data.weekend += Math.abs(transaction.credit);
-      } else {
-        data.weekday += Math.abs(transaction.credit);
-      }
+  const normalizeMerchantName = (description: string) => {
+    const stopWords = new Set([
+      'PAYMENT', 'PURCHASE', 'CARD', 'DEBIT', 'CREDIT', 'TRANSFER', 'ONLINE', 'REF', 'BANKING', 'AUTH', 'POS',
+      'DIRECT', 'WITHDRAWAL', 'DEPOSIT', 'VISA', 'MASTERCARD'
+    ]);
+
+    const words = description
+      .toUpperCase()
+      .replace(/[^A-Z\s]/g, ' ')
+      .split(/\s+/)
+      .filter((word) => word.length > 2 && !stopWords.has(word));
+
+    return words.slice(0, 3).join(' ') || 'Unknown Merchant';
+  };
+
+  const getMerchantInsightsData = () => {
+    const expenses = getFilteredTransactions().filter((t) => t.credit < 0);
+    const merchants = new Map<string, { merchant: string; amount: number; transactions: number }>();
+
+    expenses.forEach((transaction) => {
+      const merchant = normalizeMerchantName(transaction.description || '');
+      const amount = Math.abs(transaction.credit);
+      const current = merchants.get(merchant) || { merchant, amount: 0, transactions: 0 };
+      current.amount += amount;
+      current.transactions += 1;
+      merchants.set(merchant, current);
     });
 
-    // Get last 12 weeks
-    return Array.from(weeklySpending.entries())
-      .map(([weekKey, data]) => ({ weekKey, ...data }))
-      .sort((a, b) => b.weekKey.localeCompare(a.weekKey))
-      .slice(0, 12)
-      .reverse();
-  };
+    const topMerchants = Array.from(merchants.values())
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 10);
 
-  // Helper function to get week number
-  const getWeekNumber = (date: Date): number => {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    const totalTopSpend = topMerchants.reduce((sum, merchant) => sum + merchant.amount, 0);
+
+    return topMerchants.map((merchant) => ({
+      ...merchant,
+      share: totalTopSpend > 0 ? (merchant.amount / totalTopSpend) * 100 : 0,
+      label: merchant.merchant.length > 18 ? `${merchant.merchant.slice(0, 18)}...` : merchant.merchant,
+    }));
   };
 
   const handleCategoryToggle = (categoryName: string) => {
@@ -301,8 +283,8 @@ export default function FinancialCharts() {
   const savingsData = getSavingsData();
   const filteredTransactions = getFilteredTransactions();
   const categoryData = getCategoryData();
-  const cumulativeWealthData = getCumulativeWealthData();
-  const spendingPatternsData = getSpendingPatternsData();
+  const spendingTrendData = getSpendingTrendData();
+  const merchantInsightsData = getMerchantInsightsData();
 
   // Calculate current period savings metrics
   const currentPeriodIncome = filteredTransactions.filter(t => t.credit > 0).reduce((sum, t) => sum + t.credit, 0);
@@ -315,6 +297,15 @@ export default function FinancialCharts() {
   const avgMonthlySpending = currentPeriodSpending / monthsInPeriod;
   const avgMonthlyIncome = currentPeriodIncome / monthsInPeriod;
   const avgMonthlySavings = currentPeriodSavings / monthsInPeriod;
+  const latestSpendingMonth = spendingTrendData[spendingTrendData.length - 1];
+  const previousSpendingMonth = spendingTrendData[spendingTrendData.length - 2];
+  const spendingMoMChange = latestSpendingMonth && previousSpendingMonth
+    ? latestSpendingMonth.spending - previousSpendingMonth.spending
+    : 0;
+  const topMerchant = merchantInsightsData[0];
+  const top3MerchantShare = merchantInsightsData
+    .slice(0, 3)
+    .reduce((sum, merchant) => sum + merchant.share, 0);
 
   if (loading) {
     return (
@@ -336,6 +327,18 @@ export default function FinancialCharts() {
           <div className="flex justify-between items-start">
             <div className="grid grid-cols-2 sm:flex sm:space-x-4 gap-2 sm:gap-0 flex-1">
               <button
+                onClick={() => setActiveChart('categories')}
+                className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${
+                  activeChart === 'categories'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600'
+                }`}
+              >
+                <PieChartIcon className="h-4 w-4 mr-1 sm:mr-2" />
+                <span>Categories</span>
+              </button>
+
+              <button
                 onClick={() => setActiveChart('savings')}
                 className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${
                   activeChart === 'savings'
@@ -347,7 +350,7 @@ export default function FinancialCharts() {
                 <span className="hidden sm:inline">Savings Analysis</span>
                 <span className="sm:hidden">Savings</span>
               </button>
-              
+
               <button
                 onClick={() => setActiveChart('wealth')}
                 className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${
@@ -357,20 +360,8 @@ export default function FinancialCharts() {
                 }`}
               >
                 <TrendingUp className="h-4 w-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Wealth Trend</span>
-                <span className="sm:hidden">Wealth</span>
-              </button>
-              
-              <button
-                onClick={() => setActiveChart('categories')}
-                className={`flex items-center justify-center px-3 py-2 rounded-md text-sm ${
-                  activeChart === 'categories'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600'
-                }`}
-              >
-                <PieChartIcon className="h-4 w-4 mr-1 sm:mr-2" />
-                <span>Categories</span>
+                <span className="hidden sm:inline">Spending Trend</span>
+                <span className="sm:hidden">Trend</span>
               </button>
               
               <button
@@ -381,9 +372,9 @@ export default function FinancialCharts() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600'
                 }`}
               >
-                <Activity className="h-4 w-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Spending Patterns</span>
-                <span className="sm:hidden">Patterns</span>
+                <Store className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Top Merchants</span>
+                <span className="sm:hidden">Merchants</span>
               </button>
             </div>
 
@@ -589,27 +580,27 @@ export default function FinancialCharts() {
           </div>
           <div className="mt-4 grid grid-cols-2 gap-4">
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Current Balance</p>
-              <p className={`text-lg font-semibold ${cumulativeWealthData[cumulativeWealthData.length - 1]?.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(cumulativeWealthData[cumulativeWealthData.length - 1]?.balance || 0)}
+              <p className="text-xs text-gray-500 dark:text-gray-400">Average Monthly Savings</p>
+              <p className={`text-lg font-semibold ${avgMonthlySavings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatCurrency(avgMonthlySavings)}
               </p>
             </div>
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Period Change</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Savings Rate</p>
               <p className={`text-lg font-semibold ${currentPeriodSavings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {currentPeriodSavings >= 0 ? '+' : ''}{formatCurrency(currentPeriodSavings)}
+                {currentSavingsRate.toFixed(1)}%
               </p>
             </div>
           </div>
         </div>
       )}
       
-      {/* Cumulative Wealth Trend Chart */}
+      {/* Monthly Spending Trend Chart */}
       {activeChart === 'wealth' && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center flex-wrap">
             <TrendingUp className="h-5 w-5 mr-2 text-purple-600 flex-shrink-0" />
-            <span>Cumulative Wealth Trend</span>
+            <span>Monthly Spending Trend</span>
             {excludeInternalTransfers && (
               <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
                 Transfers Excluded
@@ -618,7 +609,7 @@ export default function FinancialCharts() {
           </h3>
           <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={cumulativeWealthData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+              <ComposedChart data={spendingTrendData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="month" 
@@ -631,33 +622,35 @@ export default function FinancialCharts() {
                   tick={{ fontSize: 10 }}
                 />
                 <Tooltip 
-                  formatter={(value: number) => [formatCurrency(value), 'Balance']}
+                  formatter={(value: number, name: string) => {
+                    if (name === '3-Month Average') {
+                      return [formatCurrency(value), name];
+                    }
+                    if (name === 'Net') {
+                      return [formatCurrency(value), name];
+                    }
+                    return [formatCurrency(value), name];
+                  }}
                   contentStyle={{ fontSize: '14px' }}
                 />
                 <Legend wrapperStyle={{ fontSize: '12px' }} />
-                <Area 
-                  type="monotone" 
-                  dataKey="balance" 
-                  stroke="#8B5CF6" 
-                  fill="#8B5CF6" 
-                  fillOpacity={0.3}
-                  strokeWidth={2}
-                  name="Net Worth" 
-                />
-              </AreaChart>
+                <Bar dataKey="spending" fill="#EF4444" name="Spending" />
+                <Line type="monotone" dataKey="movingAvgSpending" stroke="#8B5CF6" strokeWidth={2} dot={false} name="3-Month Average" />
+                <Line type="monotone" dataKey="net" stroke="#10B981" strokeWidth={2} dot={false} name="Net" />
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-4">
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Current Balance</p>
-              <p className={`text-lg font-semibold ${cumulativeWealthData[cumulativeWealthData.length - 1]?.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(cumulativeWealthData[cumulativeWealthData.length - 1]?.balance || 0)}
+              <p className="text-xs text-gray-500 dark:text-gray-400">Latest Month Spending</p>
+              <p className="text-lg font-semibold text-red-600">
+                {formatCurrency(latestSpendingMonth?.spending || 0)}
               </p>
             </div>
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Period Change</p>
-              <p className={`text-lg font-semibold ${currentPeriodSavings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {currentPeriodSavings >= 0 ? '+' : ''}{formatCurrency(currentPeriodSavings)}
+              <p className="text-xs text-gray-500 dark:text-gray-400">Month-over-Month Change</p>
+              <p className={`text-lg font-semibold ${spendingMoMChange <= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {spendingMoMChange > 0 ? '+' : ''}{formatCurrency(spendingMoMChange)}
               </p>
             </div>
           </div>
@@ -755,12 +748,12 @@ export default function FinancialCharts() {
         </div>
       )}
 
-      {/* Spending Patterns Chart */}
+      {/* Merchant Insights Chart */}
       {activeChart === 'patterns' && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center flex-wrap">
-            <Activity className="h-5 w-5 mr-2 text-orange-600 flex-shrink-0" />
-            <span>Weekly Spending Patterns</span>
+            <Store className="h-5 w-5 mr-2 text-orange-600 flex-shrink-0" />
+            <span>Top Merchant Spend</span>
             {excludeInternalTransfers && (
               <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
                 Transfers Excluded
@@ -769,45 +762,52 @@ export default function FinancialCharts() {
           </h3>
           <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={spendingPatternsData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+              <BarChart data={merchantInsightsData} margin={{ top: 5, right: 10, left: 40, bottom: 5 }} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
-                  dataKey="week"
-                  className="text-xs"
-                  tick={{ fontSize: 12 }}
-                />
-                <YAxis 
-                  tickFormatter={(value) => `${(value / 1000).toFixed(1)}k`}
+                  type="number"
+                  tickFormatter={(value) => `$${(value / 1000).toFixed(1)}k`}
                   className="text-xs"
                   tick={{ fontSize: 10 }}
                 />
+                <YAxis 
+                  type="category"
+                  dataKey="label"
+                  className="text-xs"
+                  tick={{ fontSize: 10 }}
+                  width={130}
+                />
                 <Tooltip 
-                  formatter={(value: number) => [formatCurrency(value), '']}
+                  formatter={(value: number, name: string, item: { payload?: { share?: number; transactions?: number } }) => {
+                    if (name === 'Spend') {
+                      return [`${formatCurrency(value)} (${item.payload?.share?.toFixed(1) || 0}%)`, name];
+                    }
+                    return [value, name];
+                  }}
                   contentStyle={{ fontSize: '14px' }}
                 />
                 <Legend wrapperStyle={{ fontSize: '12px' }} />
-                <Bar dataKey="weekday" stackId="a" fill="#3B82F6" name="Weekday" />
-                <Bar dataKey="weekend" stackId="a" fill="#F59E0B" name="Weekend" />
+                <Bar dataKey="amount" fill="#F59E0B" name="Spend" />
               </BarChart>
             </ResponsiveContainer>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-2">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Avg Daily</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Top Merchant</p>
               <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                {formatCurrency(currentPeriodSpending / Math.max(1, filteredTransactions.length))}
+                {topMerchant?.merchant || 'N/A'}
               </p>
             </div>
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-2">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Avg Weekly</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Top Merchant Spend</p>
               <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                {formatCurrency((currentPeriodSpending / monthsInPeriod) / 4.33)}
+                {formatCurrency(topMerchant?.amount || 0)}
               </p>
             </div>
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-2">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Avg Monthly</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Top 3 Share</p>
               <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                {formatCurrency(avgMonthlySpending)}
+                {top3MerchantShare.toFixed(1)}%
               </p>
             </div>
           </div>
